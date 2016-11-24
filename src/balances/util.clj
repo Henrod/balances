@@ -1,7 +1,6 @@
 (ns balances.util
   (:require [clj-time.core :as t]
-            [clj-time.format :as f])
-  (:import (org.joda.time DateTime)))
+            [clj-time.format :as f]))
 
 (def formatter (f/formatter "dd/MM"))
 
@@ -26,12 +25,6 @@
   (let [start-date# (string->date start-date) end-date# (next-day end-date)]
     (fn [current-date]
       (t/within? (t/interval start-date# end-date#) current-date))))
-
-(defn after?
-  [date]
-  (cond
-    (instance? String date) #(t/after? (string->date date) %)
-    (instance? DateTime date) #(t/after? date %)))
 
 (defn abs
   [n]

@@ -14,32 +14,29 @@
 (def ops (atom {}))
 
 (defn- validate
-  [params fields]
-  (first (drop-while params fields)))
+  [m type]
+  (->> (case type :new ["account" "amount" "description" "date"]
+                  :balance ["account"]
+                  :statement ["account" "start" "end"]
+                  :debt ["account"])
+       (drop-while m) first))
 
-(defn- handler-create
-  [{params :params}]
-  (if-let [miss (validate params ["account" "amount" "description" "date"])]
+(defn- handler
+  [func params]
+  (if-let [miss (validate params (keyword func))]
     (res/status (res/response (str "Missing parameter: " miss)) 422)
-    (do (swap! ops new-operation params)
-        (res/response "ok"))))
-
-(defn- handler-access
-  [func {:strs [account start end]}]
-  (try (res/response
-         (case func
-           "balance"   (str (current-balance @ops account))
-           "statement" (bank-statement @ops account start end)
-           "debt"      {:debts (debt-periods @ops account)}
-           (res/not-found "Not found")))
-       (catch AssertionError e (-> (str "Missing parameter: " (.getSuppressed e))
-                                   (res/response)
-                                   (res/status 400)))))
+    (let [{:strs [account start end]} params]
+      (res/response
+        (case func
+          "balance"   (str (current-balance @ops account))
+          "statement" (bank-statement @ops account start end)
+          "debt"      {:debts (debt-periods @ops account)}
+          "new"       (do (swap! ops new-operation params) "ok")
+          (res/not-found "Not found"))))))
 
 ; Hypothesis: client is authenticated in and using HTTPS
 (defroutes app-routes
-           (POST "/new" request (handler-create request))
-           (POST "/:func" [func & params] (handler-access func params))
+           (POST "/:func" [func & params] (handler func params))
            (route/not-found "Not found"))
 
 (def app

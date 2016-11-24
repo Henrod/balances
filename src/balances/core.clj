@@ -8,7 +8,6 @@
     (str description " " (util/abs amount))))
 
 
-;TODO: devo checar os tipos dos parametros ou deboas?
 (defn build
   [description amount date]
   {:pre [(instance? String description)]}
@@ -49,20 +48,23 @@
 ;;;; Available functions
 (defn new-operation
   [ops {:strs [account description amount date]}]
-  {:pre [account description amount date]}
+  {:pre [account description amount date]
+   :pos [map?]}
   (update ops
           account
           #(conj % (build description amount date))))
 
 (defn current-balance
   [ops account]
-  {:pre [account]}
+  {:pre [account]
+   :pos [float?]}
   (if (contains? ops account)
     (apply + (map :amount (ops account)))))
 
 (defn bank-statement
   [ops account start-date end-date]
-  {:pre [account start-date end-date]}
+  {:pre [account start-date end-date]
+   :pos [map?]}
   (let [within? (comp (util/within? start-date end-date) :date)
         each-balance (compute-each-balance ops account)]
     (reduce
@@ -72,16 +74,17 @@
 
 (defn debt-periods
   [ops account]
-  {:pre [account]}
-  (let [[head & tail] (drop-while (comp not neg? :balance) (compute-balances ops account))]
-    (cond
-      head (reduce
-             (fn [[head# & tail#] {:keys [balance date]}]
-               (if (= balance (:principal head#))
-                 (conj tail# head#)
-                 (mconj tail#
-                        (if (contains? head# :end) head# (assoc head# :end (util/previous-day date)))
-                        (if (neg? balance) {:start date :principal balance}))))
-             [{:start (:date head) :principal (:balance head)}]
-             tail)
-      :else [])))
+  {:pre [account]
+   :pos [map?]}
+  {:debts (let [[head & tail] (drop-while (comp not neg? :balance) (compute-balances ops account))]
+            (cond
+              head (reduce
+                     (fn [[head# & tail#] {:keys [balance date]}]
+                       (if (= balance (:principal head#))
+                         (conj tail# head#)
+                         (mconj tail#
+                                (if (contains? head# :end) head# (assoc head# :end (util/previous-day date)))
+                                (if (neg? balance) {:start date :principal balance}))))
+                     [{:start (:date head) :principal (:balance head)}]
+                     tail)
+              :else []))})
