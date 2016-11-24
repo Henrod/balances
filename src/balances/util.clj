@@ -38,3 +38,9 @@
   (if (number? n)
     (max n (- n))
     (throw (Exception. "Only numbers can have an absolute value"))))
+
+(defn to-float
+  [number]
+  (if (string? number)
+    (Float. number)
+    (float number)))
