@@ -4,6 +4,12 @@
             [balances.core :refer [build]]
             [ring.mock.request :as mock]))
 
+(deftest invalid-address-test
+  (is (= (app (mock/request :get "/invalid"))
+         {:status 404, :body "Not found", :headers {"Content-Type" "text/html; charset=utf-8"}}))
+  (is (= (app (mock/request :port "/invalid"))
+         {:status 404, :body "Not found", :headers {"Content-Type" "text/html; charset=utf-8"}})))
+
 (deftest new-operation-server-test
   (reset! ops {})
 
