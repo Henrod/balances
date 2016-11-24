@@ -4,16 +4,6 @@
                                    build bank-statement
                                    debt-periods]]))
 
-(defn init-ops []
-  (-> {}
-      (new-operation {:account 1, :description "Deposit", :amount 1000.00, :date "15/10"})
-      ;(new-operation {:account 1, :description "Purchase", :amount -1200.00, :date "16/10"})
-      (new-operation {:account 1, :description "Debit", :amount -800.00, :date "16/10"})
-      (new-operation {:account 1, :description "Salary", :amount 4000.00, :date "19/10"})
-      ;(new-operation {:account 1, :description "Withdrawal", :amount -4000.00, :date "19/10"})
-      ;(new-operation {:account 1, :description "Buy a Car", :amount -20000.00, :date "21/10"})
-      ))
-
 (deftest new-operation-test
   (let [opr-1 {:account 1 :description "Deposit" :amount 1000.00 :date "15/10"}
         opr-2 {:account 1 :description "Purchase on Amazon" :amount -800.00 :date "17/10"}]
@@ -136,9 +126,10 @@
              {:account 1, :description "Salary",   :amount 4000.00,   :date "16/10"} ;3800
              {:account 1, :description "Withdrawal",:amount -5000.00, :date "19/10"} ;-1200
              {:account 1, :description "Credit",   :amount 3000.00, :date "21/10"}]] ;1800
+
     (testing "One period of debt with end"
       (let [debts (debt-periods (reduce new-operation {} ops) 1)
-            res '({:start "19/10" :end "20/10" :principal -1200.00})]
+            res {:debts [{:start "19/10" :end "20/10" :principal -1200.00}]}]
         (is (= debts res))))
 
     (testing "Two periods of debt with ends"
@@ -146,8 +137,20 @@
                        {:account 1 :description "Debit"  :amount -2000.00 :date "23/10"} ;-200
                        {:account 1 :description "Credit" :amount 3000.00, :date "26/10"}) ;2800
             debts (debt-periods (reduce new-operation {} ops#) 1)
-            res '( {:start "23/10" :end "25/10" :principal -200.00}
-                   {:start "19/10" :end "20/10" :principal -1200.00})]
-        (is (= debts res))))))
+            res {:debts [{:start "23/10" :end "25/10" :principal -200.00}
+                         {:start "19/10" :end "20/10" :principal -1200.00}]}]
+        (is (= debts res))))
 
-;TODO: teste bedt-periods quando o balance não muda de uma data pra proxima
+    (testing "Period of debt without end"
+      (let [debts (debt-periods (reduce new-operation {} (take 4 ops)) 1)
+            res {:debts [{:start "19/10" :principal -1200.00}]}]
+        (is (= debts res))))
+
+    (testing "Periods with debt when principal doesn't change"
+      (let [ops# [{:account 1 :description "Debit"    :amount -100.00 :date "12/01"}
+                  {:account 1 :description "Credit"   :amount 200.00  :date "15/01"}
+                  {:account 1 :description "Purchase" :amount -200.00 :date "15/01"}
+                  {:account 1 :description "Salary"   :amount 1100.00 :date "20/01"}]
+            debts (debt-periods (reduce new-operation {} ops#) 1)
+            res {:debts [{:start "12/01" :principal -100.00 :end "19/01"}]}]
+        (is (= debts res))))))

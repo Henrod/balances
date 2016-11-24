@@ -5,6 +5,7 @@
     [ring.util.response :as res]
     [ring.middleware.params :refer [wrap-params]]
     [ring.middleware.json-response :refer [wrap-json-response]]
+    [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
     [balances.core :refer [new-operation current-balance bank-statement debt-periods]]))
@@ -15,17 +16,15 @@
 
 (defn- validate
   [m type]
-  (->> (case type :new ["account" "amount" "description" "date"]
-                  :balance ["account"]
-                  :statement ["account" "start" "end"]
-                  :debt ["account"])
-       (drop-while m) first))
+  (let [fields {:balance [:account], :new [:account :amount :description :date],
+                :debt [:account],    :statement [:account :start :end]}]
+    (->> type fields (drop-while m) first)))
 
 (defn- handler
   [func params]
   (if-let [miss (validate params (keyword func))]
-    (res/status (res/response (str "Missing parameter: " miss)) 422)
-    (let [{:strs [account start end]} params]
+    (res/status (res/response (str "Missing parameter: " (name miss))) 422)
+    (let [{:keys [account start end]} params]
       (res/response
         (case func
           "balance"   (str (current-balance @ops account))
@@ -42,6 +41,7 @@
 (def app
   (-> app-routes
       (reload/wrap-reload)
+      (wrap-keyword-params)
       (wrap-params)
       (wrap-json-response)))
 

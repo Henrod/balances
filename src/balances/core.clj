@@ -47,7 +47,7 @@
 
 ;;;; Available functions
 (defn new-operation
-  [ops {:strs [account description amount date]}]
+  [ops {:keys [account description amount date]}]
   {:pre [account description amount date]
    :pos [map?]}
   (update ops
@@ -68,7 +68,7 @@
   (let [within? (comp (util/within? start-date end-date) :date)
         each-balance (compute-each-balance ops account)]
     (reduce
-      (fn [m [k v]] (assoc m k {"operations" (map str (repeat "- ") v) "balance" (each-balance k)}))
+      (fn [m [k v]] (assoc m k {:operations (map str (repeat "- ") v) :balance (each-balance k)}))
       {}
       (->> (ops account) (filter within?) (all-date->string) (group-by :date)))))
 
