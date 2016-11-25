@@ -48,13 +48,13 @@
 
 (deftest to-float-test
   (testing "for integer"
-    (is (= 1.00 (util/to-float 1))
-        (= -1.00 (util/to-float -1))))
+    (is (= 1.00 (util/to-double 1))
+        (= -1.00 (util/to-double -1))))
 
   (testing "for float"
-    (is (= 100.15 (util/to-float 100.1515151))
-        (= -100.15 (util/to-float -100.15131341))))
+    (is (= 100.15 (util/to-double 100.1515151))
+        (= -100.15 (util/to-double -100.15131341))))
 
   (testing "for strings"
-    (is (= 100.50 (util/to-float "100.50292929"))
-        (= -100.50 (util/to-float "-100.50278723")))))
+    (is (= 100.50 (util/to-double "100.50292929"))
+        (= -100.50 (util/to-double "-100.50278723")))))
