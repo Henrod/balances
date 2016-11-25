@@ -38,10 +38,15 @@ Finally, at each of these dates a new key-value is associated in the map:
 
 ### debt-periods
 A vector is constructed. Each element of the vector is a map. The map contains a **start date**, a **principal** and maybe an **end date**.
+
 First, the balance is calculated for all dates at the specified account.
+
 This sequence is sorted by date.
+
 Each new date that has a negative balance is added to the vector above.
+
 If the balance becomes positive in a following date, the last element of the vector is updated with an **end date**.
+
 If the balance changes but continues negative, then the last element is updated with an **end date** and a new element is added with a **start date** and a **principal**.
 
 ## Hypothesis
