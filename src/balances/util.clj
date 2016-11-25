@@ -34,6 +34,5 @@
 
 (defn to-float
   [number]
-  (if (string? number)
-    (Float. number)
-    (float number)))
+  (-> (if (string? number) (Float. number) (float number))
+      (* 100) int (/ 100.0)))
