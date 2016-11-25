@@ -11,6 +11,7 @@
   (is (= (app (mock/request :post "/invalid"))
          {:status 404, :body "Not found", :headers {"Content-Type" "text/html; charset=utf-8"}})))
 
+
 ;;;; NEW OPERATION TEST
 (deftest one-new-operation-test
   (reset! ops {})
@@ -103,6 +104,7 @@
         response (app (mock/request :post "/balance" {}))]
     (is (= result response))))
 
+
 ;;;; BANK STATEMENT TESTS
 (deftest bank-statement-server-test
   (reset! ops {})
@@ -185,3 +187,67 @@
                              "balance" 1740.20}}
             body (json/read-str (:body response))]
         (is (= body result))))))
+
+(deftest bank-statement-missing-parameters-test
+  (testing "Missing parameter account"
+    (is (= (app (mock/request :post "/statement" {:start "10/10"
+                                                  :end "24/12"}))
+           {:status 422 :headers {} :body "Missing parameter: account"})))
+
+  (testing "Missing parameter start"
+    (is (= (app (mock/request :post "/statement" {:account 1
+                                                  :end "24/12"}))
+           {:status 422 :headers {} :body "Missing parameter: start"})))
+
+  (testing "Missing parameter end"
+    (is (= (app (mock/request :post "/statement" {:start "10/10"
+                                                  :account 1}))
+           {:status 422 :headers {} :body "Missing parameter: end"})))
+
+  (testing "Missing parameter account"
+    (is (= (app (mock/request :post "/statement" {}))
+           {:status 422 :headers {} :body "Missing parameter: account"}))))
+
+
+;;;; DEBT PERIODS TEST
+(deftest debt-periods-server-test
+  (reset! ops {})
+  (let [ops [{:account 1 :description "Credit" :amount 175.34 :date "01/01"}
+             {:account 1 :description "Debit" :amount -200.00 :date "03/01"}
+             {:account 1 :description "Salary" :amount 50173.48 :date "10/01"}
+
+             {:account 2 :description "Salary" :amount 6837.56 :date "10/01"}
+             {:account 2 :description "Purchase" :amount -200.23 :date "14/01"}
+             {:account 2 :description "Purchase" :amount -31.23 :date "14/01"}
+             {:account 2 :description "Debit" :amount -1123.00 :date "02/02"}
+
+             {:account 3 :description "Debit" :amount -1520.00 :date "05/01"}
+             {:account 3 :description "Purchase" :amount -154.00 :date "19/01"}
+             {:account 3 :description "Debit" :amount -140.33 :date "22/02"}]]
+    (doseq [op ops] (app (mock/request :post "/new" op)))
+    (testing "Account number 1"
+      (let [response (app (mock/request :post "/debt" {:account 1}))
+            result {"debts"
+                    [{"start" "03/01", "end" "09/01", "principal" -24.65}]}
+            body (json/read-str (:body response))]
+        (is (= body result))))
+
+    (testing "Account number 2"
+      (let [response (app (mock/request :post "/debt" {:account 2}))
+            result {"debts" []}
+            body (json/read-str (:body response))]
+        (is (= body result))))
+
+    (testing "Account number 3"
+      (let [response (app (mock/request :post "/debt" {:account 3}))
+            result {"debts"
+                    [{"start" "22/02", "principal" -1814.33}
+                     {"start" "19/01", "end" "21/02", "principal" -1674.00}
+                     {"start" "05/01", "end" "18/01", "principal" -1520.00}]}
+            body (json/read-str (:body response))]
+        (is (= body result))))))
+
+(deftest debt-periods-missing-parameters-test
+  (testing "Missing parameter account"
+    (is (= (app (mock/request :post "/debt" {}))
+           {:status 422 :headers {} :body "Missing parameter: account"}))))
