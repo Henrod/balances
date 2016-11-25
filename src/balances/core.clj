@@ -1,6 +1,6 @@
 (ns balances.core
   "Core functions for the bank operations.
-  All functions are pure.s"
+  All functions are pure."
   (:require [balances.util :as util]))
 
 ;;;; Record definition
