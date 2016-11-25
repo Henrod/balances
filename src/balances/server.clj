@@ -10,8 +10,8 @@
     [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
-    [balances.core :refer [new-operation current-balance bank-statement debt-periods]]))
-
+    [balances.core :refer [new-operation current-balance
+                           bank-statement debt-periods]]))
 
 (def ops
   "State variable.
@@ -23,8 +23,10 @@
   "Validates the parameters of a function, since all values are necessary to
   properly continue"
   [m type]
-  (let [fields {:balance [:account] :new       [:account :amount :description :date],
-                :debt    [:account] :statement [:account :start :end]}]
+  (let [fields {:balance   [:account]
+                :new       [:account :amount :description :date],
+                :debt      [:account]
+                :statement [:account :start :end]}]
     (->> type fields (drop-while m) first)))
 
 (defn- handler
