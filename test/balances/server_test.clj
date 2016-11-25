@@ -69,14 +69,15 @@
 ;;;; CURRENT BALANCE TEST
 (deftest current-balance-from-one-credit-operation-test
   (reset! ops {})
-  (let [result {:status 200, :headers {}, :body 100.00}
+  (let [result {:status 200, :headers {}, :body "100.00"}
         _ (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10" )))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
 
+
 (deftest current-balance-from-one-debit-operation-test
   (reset! ops {})
-  (let [result {:status 200, :headers {}, :body -120.00}
+  (let [result {:status 200, :headers {}, :body "-120.00"}
         _ (app (mock/request :post "/new" (opp 1 "Credit" -120.0 "15/10" )))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
@@ -84,7 +85,7 @@
 
 (deftest current-balance-from-multiple-operations-test
   (reset! ops {})
-  (let [result {:status 200, :headers {}, :body 1201.00}
+  (let [result {:status 200, :headers {}, :body "1201.00"}
         ops [(opp 1 "Credit"  100.50  "15/10")   ;  100.50
              (opp 1 "Debit"  -120.00  "16/10" )  ; -19.50
              (opp 1 "Deposit" 220.50  "17/10" )  ;  201.00
@@ -95,16 +96,17 @@
 
 (deftest current-balance-multiple-accounts-test
   (reset! ops {})
-  (let [result1 {:status 200, :headers {}, :body 1100.50}
-        result2 {:status 200, :headers {}, :body -319.99}
-        result3 {:status 200, :headers {}, :body 5000.75}
+  (let [result1 {:status 200, :headers {}, :body "1100.50"}
+        result2 {:status 200, :headers {}, :body "-319.99"}
+        result3 {:status 200, :headers {}, :body "5000.75"}
         result4 {:status 200, :headers {}, :body nil}
         ops [(opp 1 "Credit"    100.50    "15/10")    ; 1: 100.50
-             (opp 2 "Debit"    -120.0     "15/10")     ; 2: -120.0
+             (opp 2 "Debit"    -120.0     "15/10")    ; 2: -120.0
              (opp 2 "Purchase" -199.99    "20/10")    ; 2: -319.99
-             (opp 3 "Salary"    5000.7565 "12/10") ; 3: 5000.75
+             (opp 3 "Salary"    5000.7565 "12/10")    ; 3: 5000.75
              (opp 1 "Salary"    1000.0    "18/10")]]  ; 1: 1100.50
     (doseq [op ops] (app (mock/request :post "/new" op)))
+
     (is (= result1 (app (mock/request :post "/balance" {:account 1}))))
     (is (= result2 (app (mock/request :post "/balance" {:account 2}))))
     (is (= result3 (app (mock/request :post "/balance" {:account 3}))))

@@ -64,9 +64,9 @@
   operations"
   [ops account]
   {:pre [ops account]
-   :pos [float?]}
+   :pos [string?]}
   (if (contains? ops account)
-    (->> (ops account) (map :amount) (apply +) util/to-format)))
+    (->> (ops account) (map :amount) (apply +) (format "%.2f"))))
 
 (defn bank-statement
   "Log of operations of an account between two dates"

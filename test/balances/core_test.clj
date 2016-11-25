@@ -89,10 +89,10 @@
         ops (reduce new-operation {} operations)]
 
     (testing "Current balance of account number 1"
-      (is (= (current-balance ops 1) 524.57)))
+      (is (= (current-balance ops 1) "524.58")))
 
     (testing "Current balance of account number 2"
-      (is (= (current-balance ops 2) 8015.40)))
+      (is (= (current-balance ops 2) "8015.40")))
 
     (testing "Current balance of absent account"
       (is (nil? (current-balance ops 3))))))
