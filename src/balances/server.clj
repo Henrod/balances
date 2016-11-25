@@ -16,26 +16,27 @@
 
 (defn- validate
   [m type]
-  (let [fields {:balance [:account], :new [:account :amount :description :date],
-                :debt [:account],    :statement [:account :start :end]}]
+  (let [fields {:balance [:account] :new       [:account :amount :description :date],
+                :debt    [:account] :statement [:account :start :end]}]
     (->> type fields (drop-while m) first)))
 
 (defn- handler
   [func params]
-  (if-let [miss (validate params (keyword func))]
+  (if-let [miss (validate params func)]
     (res/status (res/response (str "Missing parameter: " (name miss))) 422)
     (let [{:keys [account start end]} params]
       (res/response
         (case func
-          "balance"   (str (current-balance @ops account))
-          "statement" (bank-statement @ops account start end)
-          "debt"      {:debts (debt-periods @ops account)}
-          "new"       (do (swap! ops new-operation params) "ok")
-          (res/not-found "Not found"))))))
+          :new       (do (swap! ops new-operation params) "ok") ; side-effect: update ops
+          :balance   (current-balance @ops account)
+          :statement (bank-statement @ops account start end)
+          :debt      (debt-periods @ops account))))))
 
-; Hypothesis: client is authenticated in and using HTTPS
 (defroutes app-routes
-           (POST "/:func" [func & params] (handler func params))
+           (POST "/new"       [& params] (handler :new       params))
+           (POST "/balance"   [& params] (handler :balance   params))
+           (POST "/statement" [& params] (handler :statement params))
+           (POST "/debt"      [& params] (handler :debt      params))
            (route/not-found "Not found"))
 
 (def app

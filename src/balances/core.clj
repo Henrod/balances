@@ -5,15 +5,16 @@
 (defrecord Operation [description amount date]
   Object
   (toString [this]
-    (str description " " (util/abs amount))))
-
+    (str description " " (format "%.2f" (util/abs amount)))))
 
 (defn build
   [description amount date]
   {:pre [(instance? String description)]}
   (Operation. description
-              (util/to-float amount)
+              (util/to-double amount)
               (util/string->date date)))
+
+;TODO: TESTAR HELPER FUNCTIONS
 
 
 ;;;; Helper function
@@ -25,19 +26,24 @@
   "Compute the balance for each date and sort the vector by date"
   [ops account]
   {:pos [vector?]}
-  (let [sum-last (fn [val arr] (+ val (if (empty? arr) 0 (-> arr last :balance))))]
+  (let [sum-last (fn [val arr]
+                   (util/to-double
+                     (+ val (if (empty? arr) 0 (-> arr last :balance)))))]
     (->> (group-by :date (ops account))
          (reduce (fn [a [k v]] (conj a {:date k :amount (apply + (map :amount v))})) [])
          (sort-by :date)
-         (reduce (fn [a {:keys [date amount]}] (conj a {:date (util/date->string date)
-                                                        :balance (sum-last amount a)}))
+         (reduce (fn [a {:keys [date amount]}]
+                   (conj a {:date (util/date->string date)
+                            :balance (sum-last amount a)}))
                  []))))
 
 (defn- compute-each-balance
   "Compute the balance for each date and return a map from date to balance"
   [ops account]
   {:pos [map?]}
-  (reduce (fn [m {:keys [balance date]}] (assoc m date balance)) {} (compute-balances ops account)))
+  (reduce (fn [m {:keys [balance date]}]
+            (assoc m date balance))
+          {} (compute-balances ops account)))
 
 (defn- mconj
   "Only conjoins maps to coll"
@@ -59,7 +65,8 @@
   {:pre [account]
    :pos [float?]}
   (if (contains? ops account)
-    (apply + (map :amount (ops account)))))
+    (format "%.2f"
+            (apply + (map :amount (ops account))))))
 
 (defn bank-statement
   [ops account start-date end-date]

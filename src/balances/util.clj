@@ -32,8 +32,7 @@
     (max n (- n))
     (throw (Exception. "Only numbers can have an absolute value"))))
 
-(defn to-float
+(defn to-double
   [number]
-  (if (string? number)
-    (Float. number)
-    (float number)))
+  (-> (if (string? number) (Double. number) (double number))
+      (* 100) int (/ 100.0)))
