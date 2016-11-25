@@ -67,16 +67,20 @@
 
 ;;;; CURRENT BALANCE TESTS
 (deftest current-balance-test
-  (let [operations [{:account 1 :description "Deposit" :amount 1000.00 :date "15/10"}
-                    {:account 1 :description "Purchase on Amazon" :amount -800.00 :date "17/10"}
-                    {:account 2 :description "Salary" :amount 8000.00 :date "12/10"}
-                    {:account 2 :description "Debit to Mary" :amount -100.00 :date "14/10"}]
+  (let [operations [{:account 1 :description "Deposit"
+                     :amount 1423.34 :date "15/10"}
+                    {:account 1 :description "Purchase on Amazon"
+                     :amount -898.76 :date "17/10"}
+                    {:account 2 :description "Salary"
+                     :amount 8115.40 :date "12/10"}
+                    {:account 2 :description "Debit to Mary"
+                     :amount -100.00 :date "14/10"}]
         ops (reduce new-operation {} operations)]
     (testing "Current balance of account number 1"
-      (is (= (current-balance ops 1) "200.00")))
+      (is (= (current-balance ops 1) 524.57)))
 
     (testing "Current balance of account number 2"
-      (is (= (current-balance ops 2) "7900.00")))
+      (is (= (current-balance ops 2) 8015.40)))
 
     (testing "Current balance of absent account"
       (is (nil? (current-balance ops 3))))))

@@ -1,4 +1,6 @@
 (ns balances.server
+  "Server functions.
+  A state variable is made necessary to hold all past operations."
   (:require
     [compojure.route :as route]
     [ring.middleware.reload :as reload]
@@ -10,11 +12,16 @@
     [compojure.core :refer [defroutes GET POST]]
     [balances.core :refer [new-operation current-balance bank-statement debt-periods]]))
 
-;; Atom: synchronous and no need for coordinated (refs are coordinated)
-;; TODO: transformar isso no doc da variavel ops
-(def ops (atom {}))
+
+(def ops
+  "State variable.
+  ops is defined as an atom because it needs to be synchronous and there is
+  no need to be coordinated"
+  (atom {}))
 
 (defn- validate
+  "Validates the parameters of a function, since all values are necessary to
+  properly continue"
   [m type]
   (let [fields {:balance [:account] :new       [:account :amount :description :date],
                 :debt    [:account] :statement [:account :start :end]}]

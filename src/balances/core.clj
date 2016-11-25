@@ -1,4 +1,6 @@
 (ns balances.core
+  "Core functions for the bank operations.
+  All functions are pure.s"
   (:require [balances.util :as util]))
 
 ;;;; Record definition
@@ -8,10 +10,11 @@
     (str description " " (format "%.2f" (util/abs amount)))))
 
 (defn build
+  "Builds a Operation instance from description, amount and date"
   [description amount date]
   {:pre [(instance? String description)]}
   (Operation. description
-              (util/to-double amount)
+              (util/to-format amount)
               (util/string->date date)))
 
 
@@ -27,7 +30,7 @@
   [ops account]
   {:pos [vector?]}
   (let [sum-last (fn [val arr]
-                   (util/to-double
+                   (util/to-format
                      (+ val (if (empty? arr) 0 (-> arr last :balance)))))]
     (->> (group-by :date (ops account))
          (reduce (fn [a [k v]] (conj a {:date k :amount (apply + (map :amount v))})) [])
@@ -48,46 +51,53 @@
 
 ;;;; Available functions
 (defn new-operation
+  "Returns a new map with a new Operation"
   [ops {:keys [account description amount date]}]
-  {:pre [account description amount date]
+  {:pre [ops account description amount date]
    :pos [map?]}
   (update ops
           account
           #(conj % (build description amount date))))
 
 (defn current-balance
+  "Current balance of an account calculated from the sum of all previous
+  operations"
   [ops account]
-  {:pre [account]
+  {:pre [ops account]
    :pos [float?]}
   (if (contains? ops account)
-    (format "%.2f"
-            (apply + (map :amount (ops account))))))
+    (->> (ops account) (map :amount) (apply +) util/to-format)))
 
 (defn bank-statement
+  "Log of operations of an account between two dates"
   [ops account start-date end-date]
-  {:pre [account start-date end-date]
+  {:pre [ops account start-date end-date]
    :pos [map?]}
   (let [within? (comp (util/within? start-date end-date) :date)
         each-balance (compute-each-balance ops account)]
     (reduce
-      (fn [m [k v]] (assoc m k {:operations (map str (repeat "- ") v) :balance (each-balance k)}))
+      (fn [m [k v]] (assoc m k {:operations (map str (repeat "- ") v)
+                                :balance (each-balance k)}))
       {}
       (->> (ops account) (filter within?) (all-date->string) (group-by :date)))))
 
 (defn debt-periods
+  "Map with a vector of periods when the account had a negative balance. Each
+   element of the vector is a map with start date, negative balance and end
+   date if the current balance is non negative"
   [ops account]
-  {:pre [account]
+  {:pre [ops account]
    :pos [map?]}
   {:debts (let [[head & tail] (drop-while (comp not neg? :balance) (compute-balances ops account))
                 mconj (fn [coll & xs] (apply conj coll (filter map? xs)))]
-            (cond
-              head (reduce
-                     (fn [[head# & tail#] {:keys [balance date]}]
-                       (if (= balance (:principal head#))
-                         (conj tail# head#)
-                         (mconj tail#
-                                (if (contains? head# :end) head# (assoc head# :end (util/previous-day date)))
-                                (if (neg? balance) {:start date :principal balance}))))
-                     [{:start (:date head) :principal (:balance head)}]
-                     tail)
-              :else []))})
+            (if head
+              (reduce
+                (fn [[head# & tail#] {:keys [balance date]}]
+                  (if (= balance (:principal head#))
+                    (conj tail# head#)
+                    (mconj tail#
+                           (if (contains? head# :end) head# (assoc head# :end (util/previous-day date)))
+                           (if (neg? balance) {:start date :principal balance}))))
+                [{:start (:date head) :principal (:balance head)}]
+                tail)
+              []))})
