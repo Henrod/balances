@@ -14,11 +14,11 @@
               (util/to-double amount)
               (util/string->date date)))
 
-;TODO: TESTAR HELPER FUNCTIONS
-
 
 ;;;; Helper function
 (defn- all-date->string
+  "Convert the dates of each element from a seq of Operations from Date to
+  String"
   [coll]
   (map #(update % :date util/date->string) coll))
 
@@ -44,11 +44,6 @@
   (reduce (fn [m {:keys [balance date]}]
             (assoc m date balance))
           {} (compute-balances ops account)))
-
-(defn- mconj
-  "Only conjoins maps to coll"
-  [coll & xs]
-  (apply conj coll (filter map? xs)))
 
 
 ;;;; Available functions
@@ -83,7 +78,8 @@
   [ops account]
   {:pre [account]
    :pos [map?]}
-  {:debts (let [[head & tail] (drop-while (comp not neg? :balance) (compute-balances ops account))]
+  {:debts (let [[head & tail] (drop-while (comp not neg? :balance) (compute-balances ops account))
+                mconj (fn [coll & xs] (apply conj coll (filter map? xs)))]
             (cond
               head (reduce
                      (fn [[head# & tail#] {:keys [balance date]}]

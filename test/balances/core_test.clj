@@ -1,7 +1,53 @@
 (ns balances.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [balances.core :refer [new-operation current-balance build
-                                   bank-statement debt-periods]]))
+                                   bank-statement debt-periods]])
+  (:import (balances.core Operation)))
+
+
+;;;; HELPER FUNCTIONS TESTS
+(deftest all-dates->string-test
+  (let [operations [(build "Debit" -146.32 "06/12")
+                    (build "Credit" 370.05 "12/12")
+                    (build "Purchase" -130.44 "01/12")]
+        str-dates (#'balances.core/all-date->string operations)
+        result [(Operation. "Debit" -146.32 "06/12")
+                (Operation. "Credit" 370.05 "12/12")
+                (Operation. "Purchase" -130.44 "01/12")]]
+    (is (= result str-dates))))
+
+(deftest compute-balances-test
+  (let [ops {1 [(build "Credit" 1000.00 "07/12")
+                (build "Debit" -146.32 "06/12")
+                (build "Purchase" -32.20 "06/12")]
+             2 [(build "Deposit" 500.00 "06/12")
+                (build "Credit" 1000.00 "07/12")
+                (build "Salary" 4267.34 "06/12")]}
+        balances-1 (#'balances.core/compute-balances ops 1)
+        balances-2 (#'balances.core/compute-balances ops 2)
+        result-1 [{:date "06/12" :balance -178.52}
+                  {:date "07/12" :balance 821.48}]
+        result-2 [{:date "06/12" :balance 4767.34}
+                  {:date "07/12" :balance 5767.34}]]
+    (is (= balances-1 result-1))
+    (is (= balances-2 result-2))))
+
+(deftest compute-each-balance-test
+  (let [ops {1 [(build "Credit" 1000.00 "07/12")
+                (build "Debit" -146.32 "06/12")
+                (build "Purchase" -32.20 "06/12")]
+             2 [(build "Deposit" 500.00 "06/12")
+                (build "Credit" 1000.00 "07/12")
+                (build "Salary" 4267.34 "06/12")]}
+        balances-1 (#'balances.core/compute-each-balance ops 1)
+        balances-2 (#'balances.core/compute-each-balance ops 2)
+        result-1 {"06/12" -178.52
+                  "07/12" 821.48}
+        result-2 {"06/12" 4767.34
+                  "07/12" 5767.34}]
+    (is (= balances-1 result-1))
+    (is (= balances-2 result-2))))
+
 
 ;;;; NEW OPERATION TESTS
 (deftest new-operation-test
