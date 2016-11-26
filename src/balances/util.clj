@@ -6,31 +6,31 @@
 
 (def formatter (f/formatter "dd/MM"))
 
-(defn string->date
+(defn str->date
   "Constructs a Date from a String. Its format must be dd/MM"
   [str]
   (f/parse formatter str))
 
-(defn date->string
+(defn date->str
   "Constructs a String from a Date. The string's format is dd/MM"
   [date]
   (f/unparse formatter date))
 
 (defn previous-day
-  "Gets a string date and returns a string for the previous day"
-  [str]
-  (date->string (t/minus (string->date str) (t/days 1))))
+  "Gets a date and returns a string for the previous day"
+  [date]
+  (date->str (t/minus date (t/days 1))))
 
 (defn next-day
   "Gets a string date and returns a Date for the next day"
   [str]
-  (t/plus (string->date str) (t/days 1)))
+  (t/plus (str->date str) (t/days 1)))
 
 (defn within?
   "Constructs a predicate that returns true if a Date is between start-date
   and end-date"
   [start-date end-date]
-  (let [start-date# (string->date start-date) end-date# (next-day end-date)]
+  (let [start-date# (str->date start-date) end-date# (next-day end-date)]
     (fn [current-date]
       (t/within? (t/interval start-date# end-date#) current-date))))
 

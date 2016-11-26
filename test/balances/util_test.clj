@@ -4,23 +4,23 @@
 
 (deftest previous-day-test
   (testing "day in the middle of a month"
-    (is (= "16/10" (util/previous-day "17/10"))))
+    (is (= "16/10" (util/previous-day (util/str->date "17/10")))))
 
   (testing "day at the beginning of a month"
-    (is (= "30/11" (util/previous-day "01/12"))))
+    (is (= "30/11" (util/previous-day (util/str->date "01/12")))))
 
   (testing "day at the beginning of a year"
-    (is (= "31/12" (util/previous-day "01/01")))))
+    (is (= "31/12" (util/previous-day (util/str->date "01/01"))))))
 
 (deftest next-day-test
   (testing "day in the middle of a month"
-    (is (= "16/10" (util/date->string (util/next-day "15/10")))))
+    (is (= "16/10" (util/date->str (util/next-day "15/10")))))
 
   (testing "day in the end of a month"
-    (is (= "01/02" (util/date->string (util/next-day "31/01")))))
+    (is (= "01/02" (util/date->str (util/next-day "31/01")))))
 
   (testing "day in the end of a year"
-    (is (= "01/01" (util/date->string (util/next-day "31/12"))))))
+    (is (= "01/01" (util/date->str (util/next-day "31/12"))))))
 
 (deftest abs-test
   (testing "for integers"

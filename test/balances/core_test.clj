@@ -1,54 +1,37 @@
 (ns balances.core-test
   (:require [clojure.test :refer [deftest testing is]]
             [balances.core :refer [new-operation current-balance build
-                                   bank-statement debt-periods]])
-  (:import (balances.core Operation)))
+                                   bank-statement debt-periods
+                                   compute-balances]]
+            [balances.util :as util]))
 
 (defn- opp
   "Operation params: build a map more succinctly"
   [account description amount date]
   {:account account :description description :amount amount :date date})
 
+(defn- date
+  "Convert string to Date more succintly"
+  [str]
+  (util/str->date str))
+
 ;;;; HELPER FUNCTIONS TESTS
-(deftest all-dates->string-test
-  (let [operations [(build "Debit" -146.32 "06/12")
-                    (build "Credit" 370.05 "12/12")
-                    (build "Purchase" -130.44 "01/12")]
-        str-dates (#'balances.core/all-date->string operations)
-        result [(Operation. "Debit" -146.32 "06/12")
-                (Operation. "Credit" 370.05 "12/12")
-                (Operation. "Purchase" -130.44 "01/12")]]
-    (is (= result str-dates))))
 
 (deftest compute-balances-test
-  (let [ops {1 [(build "Credit" 1000.00 "07/12")
-                (build "Debit" -146.32 "06/12")
-                (build "Purchase" -32.20 "06/12")]
-             2 [(build "Deposit" 500.00 "06/12")
-                (build "Credit" 1000.00 "07/12")
-                (build "Salary" 4267.34 "06/12")]}
-        balances-1 (#'balances.core/compute-balances ops 1)
-        balances-2 (#'balances.core/compute-balances ops 2)
-        result-1 [{:date "06/12" :balance -178.52}
-                  {:date "07/12" :balance 821.48}]
-        result-2 [{:date "06/12" :balance 4767.34}
-                  {:date "07/12" :balance 5767.34}]]
-    (is (= balances-1 result-1))
-    (is (= balances-2 result-2))))
-
-(deftest compute-each-balance-test
-  (let [ops {1 [(build "Credit" 1000.00 "07/12")
-                (build "Debit" -146.32 "06/12")
-                (build "Purchase" -32.20 "06/12")]
-             2 [(build "Deposit" 500.00 "06/12")
-                (build "Credit" 1000.00 "07/12")
-                (build "Salary" 4267.34 "06/12")]}
-        balances-1 (#'balances.core/compute-each-balance ops 1)
-        balances-2 (#'balances.core/compute-each-balance ops 2)
-        result-1 {"06/12" -178.52
-                  "07/12" 821.48}
-        result-2 {"06/12" 4767.34
-                  "07/12" 5767.34}]
+  (let [day1 (date "06/12")
+        day2 (date "07/12")
+        ops {1 {:current 821.48
+                :operations {day1 [(build "Debit" -146.32)
+                                   (build "Purchase" -32.20)]
+                             day2 [(build "Credit" 1000.00)]}}
+             2 {:current 5767.34
+                :operations {day1 [(build "Salary" 4267.34)]
+                             day2 [(build "Deposit" 500.00)
+                                   (build "Credit" 1000.00)]}}}
+        balances-1 (compute-balances (get-in ops [1 :operations]))
+        balances-2 (compute-balances (get-in ops [2 :operations]))
+        result-1 {day1 -178.52 day2 821.48}
+        result-2 {day1 4267.34 day2 5767.34}]
     (is (= balances-1 result-1))
     (is (= balances-2 result-2))))
 
@@ -56,27 +39,32 @@
 ;;;; NEW OPERATION TESTS
 (deftest new-operation-test
   (let [opr-1 (opp 1 "Deposit" 1000.00 "15/10")
-        opr-2 (opp 1 "Purchase on Amazon" -800.00 "17/10")
+        opr-2 (opp 1 "Purchase" -800.00 "17/10")
         opr-3 (opp 2 "Debit" -199.43 "17/11")
         opr-4 (opp 3 "Salary" 8123.30 "10/10")]
 
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
-            res {1 [(build "Deposit" 1000.00 "15/10")]}]
+            res {1 {:current    1000.00
+                    :operations {(date "15/10") [(build "Deposit" 1000.00)]}}}]
         (is (= ops res))))
 
     (testing "Add new operation"
       (let [ops (-> (new-operation {} opr-1) (new-operation opr-2))
-            res {1 [(build "Purchase on Amazon" -800.00 "17/10")
-                    (build "Deposit" 1000.00 "15/10")]}]
+            res {1 {:current 200.00
+                    :operations {(date "15/10") [(build "Deposit" 1000.00)]
+                                 (date "17/10") [(build "Purchase" -800.00)]}}}]
         (is (= ops res))))
 
     (testing "Add multiple accounts"
       (let [ops (reduce new-operation {} [opr-1 opr-2 opr-3 opr-4])
-            res {1 [(build "Purchase on Amazon" -800.00 "17/10")
-                    (build "Deposit" 1000.00 "15/10")]
-                 2 [(build "Debit" -199.43 "17/11")]
-                 3 [(build "Salary" 8123.30 "10/10")]}]
+            res {1 {:current 200.00
+                    :operations {(date "15/10") [(build "Deposit" 1000.00)]
+                                 (date "17/10") [(build "Purchase" -800.00)]}}
+                 2 {:current -199.43
+                    :operations {(date "17/11") [(build "Debit" -199.43)]}}
+                 3 {:current 8123.30
+                    :operations {(date "10/10") [(build "Salary" 8123.30)]}}}]
         (is (= ops res))))))
 
 
@@ -108,32 +96,32 @@
     (testing "statement with one operation for account 1"
       (let [sta (bank-statement
                   (new-operation {} (operations 0)) 1 "15/10" "17/10")
-            res {"15/10" {:operations ["- Deposit 1000.00"]
+            res {"15/10" {:operations ["Deposit 1000.00"]
                           :balance 1000.00}}]
         (is (= sta res))))
 
     (testing "statement with two operation for account 1"
       (let [sta (bank-statement
                   (reduce new-operation {} (take 2 operations)) 1 "15/10" "17/10")
-            res {"15/10" {:operations ["- Deposit 1000.00"]
+            res {"15/10" {:operations ["Deposit 1000.00"]
                           :balance 1000.00}
-                  "17/10" {:operations ["- Purchase on Amazon 800.00"]
+                  "17/10" {:operations ["Purchase on Amazon 800.00"]
                            :balance 200.00}}]
         (is (= sta res))))
 
     (testing "statement with three operation for account 2"
       (let [sta (bank-statement
                   (reduce new-operation {} (take 3 operations)) 2 "15/10" "17/10")
-            res {"15/10" {:operations ["- Salary 8000.00"]
+            res {"15/10" {:operations ["Salary 8000.00"]
                           :balance 8000.00}}]
         (is (= sta res))))
 
     (testing "statement with four operation for account 2"
       (let [sta (bank-statement
                   (reduce new-operation {} operations) 2 "15/10" "17/10")
-            res {"15/10" {:operations ["- Salary 8000.00"]
+            res {"15/10" {:operations ["Salary 8000.00"]
                           :balance 8000.00}
-                  "17/10" {:operations ["- Debit to Mary 100.00"]
+                  "17/10" {:operations ["Debit to Mary 100.00"]
                            :balance 7900.00}}]
         (is (= sta res))))
 
@@ -149,10 +137,10 @@
                     (opp 1 "Purchase" -1200.00 "16/10")
                     (opp 1 "Salary" 4000.00 "19/10")
                     (opp 1 "Debit" -20000.00 "21/10")]
-        res {"15/10" {:balance 1000.00   :operations ["- Deposit 1000.00"]}
-             "16/10" {:balance -200.00   :operations ["- Purchase 1200.00"]}
-             "19/10" {:balance 3800.00   :operations ["- Salary 4000.00"]}
-             "21/10" {:balance -16200.00 :operations ["- Debit 20000.00"]}}
+        res {"15/10" {:balance 1000.00   :operations ["Deposit 1000.00"]}
+             "16/10" {:balance -200.00   :operations ["Purchase 1200.00"]}
+             "19/10" {:balance 3800.00   :operations ["Salary 4000.00"]}
+             "21/10" {:balance -16200.00 :operations ["Debit 20000.00"]}}
         ops (reduce new-operation {} operations)]
 
     (testing "Statement within dates"
@@ -178,12 +166,12 @@
                     (opp 1 "Debit" -2000.00 "16/10")
                     (opp 1 "Credit" 5000.00 "19/10")
                     (opp 1 "Withdrawal" -3800.00 "19/10")]
-        res {"15/10" {:balance 1000.00 :operations ["- Deposit 1000.00"]}
-             "19/10" {:balance 3000.00 :operations ["- Withdrawal 3800.00"
-                                                    "- Credit 5000.00"]}
-             "16/10" {:balance 1800.00 :operations ["- Debit 2000.00"
-                                                    "- Salary 4000.00"
-                                                    "- Purchase 1200.00"]}}
+        res {"15/10" {:balance 1000.00 :operations ["Deposit 1000.00"]}
+             "19/10" {:balance 3000.00 :operations ["Withdrawal 3800.00"
+                                                    "Credit 5000.00"]}
+             "16/10" {:balance 1800.00 :operations ["Debit 2000.00"
+                                                    "Salary 4000.00"
+                                                    "Purchase 1200.00"]}}
         ops (reduce new-operation {} operations)]
 
     (testing "Multiple operations on 16/10 and 19/10"
