@@ -4,6 +4,7 @@
   (:require [clj-time.core :as t]
             [clj-time.format :as f]))
 
+;;;; Date functions
 (def formatter (f/formatter "dd/MM"))
 
 (defn str->date
@@ -34,6 +35,14 @@
     (fn [current-date]
       (t/within? (t/interval start-date# end-date#) current-date))))
 
+(defn validate-date
+  "Validate a string as date"
+  [& strs]
+  (try (doseq [s strs] (str->date s))
+       (catch Exception e (.getMessage e))))
+
+
+;; Number functions
 (defn abs
   "Absolute value of a number"
   [n]
@@ -47,3 +56,11 @@
   [number]
   (-> (if (string? number) (Double. number) (double number))
       (* 100) int (/ 100) double))
+
+(defn validate-number
+  "Validate if the object passed as number is really a number"
+  [obj]
+  (try (cond
+         (and (string? obj) (Double. obj)) nil
+         (double obj) nil)
+       (catch NumberFormatException e (str e))))

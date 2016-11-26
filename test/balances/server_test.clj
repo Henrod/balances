@@ -84,6 +84,25 @@
             response (app (mock/request :post "/new" (dissoc m :amount :date)))]
         (is (or (= result1 response) (= result2 response)))))))
 
+(deftest new-operation-invalid-dates-test
+  (testing "for month 13"
+    (is (= 422 (:status (app (mock/request :post "/new"
+                                           (opp 1 "Credit" 100.0 "15/13")))))))
+
+  (testing "for 30/02"
+    (is (= 422 (:status (app (mock/request :post "/new"
+                                           (opp 1 "Credit" 100.0 "30/02")))))))
+
+  (testing "for 31/11"
+    (is (= 422 (:status (app (mock/request :post "/new"
+                                           (opp 1 "Credit" 100.0 "31/11"))))))))
+
+(deftest invalid-amount-test
+  (testing "An word passed as amount"
+    (is (= 422 (:status (app (mock/request
+                               :post "/new"
+                               (opp 1 "Credit" "Cheese" "20/11"))))))))
+
 
 ;;;; CURRENT BALANCE TEST
 (deftest current-balance-from-one-credit-operation-test

@@ -10,8 +10,9 @@
     [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
-    [balances.core :refer [new-operation current-balance
-                           bank-statement debt-periods]]))
+    [balances.core :refer [new-operation current-balance bank-statement
+                           debt-periods]]
+    [balances.util :as u]))
 
 (def ops
   "State variable.
@@ -21,18 +22,27 @@
 
 (defn- validate
   "Validates the parameters of a function, since all values are necessary to
-  properly continue"
+  properly continue.
+  Also, validates the date passed as string and the amount (which needs to be
+  a number)"
   [m type]
   (let [fields {:balance   [:account]
                 :new       [:account :amount :description :date],
                 :debt      [:account]
-                :statement [:account :start :end]}]
-    (->> type fields (drop-while m) first)))
+                :statement [:account :start :end]}
+        miss (->> type fields (drop-while m) first)]
+    (if miss
+      (str "Missing parameter: " (name miss))
+      (let [{:keys [amount date start end]} m]
+        (case type
+          :new (or (u/validate-date date) (u/validate-number amount))
+          :statement (u/validate-date start end)
+          nil)))))
 
 (defn- handler
   [func params]
   (if-let [miss (validate params func)]
-    (res/status (res/response (str "Missing parameter: " (name miss))) 422)
+    (res/status (res/response miss) 422)
     (let [{:keys [account start end]} params]
       (res/response
         (case func
