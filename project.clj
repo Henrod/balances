@@ -1,5 +1,5 @@
 (defproject balances "0.1.0"
-  :description "Bank simulation"
+  :description "A bank simulation"
   :url "https://github.com/Henrod/balances"
   :license {:name "MIT License"
             :url "https://opensource.org/licenses/MIT"}
