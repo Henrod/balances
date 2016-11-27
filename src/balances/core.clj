@@ -33,7 +33,8 @@
 (defn new-operation
   "Returns a new map with a new Operation"
   [ops {:keys [account description amount date]}]
-  {:pre [ops account description amount date]
+  {:pre [ops (u/validate-description description) (u/validate-account account)
+         (u/validate-date date) (u/validate-amount amount)]
    :pos [(map? %)]}
   (let [date# (u/str->date date)
         amount# (u/to-format amount)]
@@ -50,7 +51,7 @@
   "Current balance of an account calculated from the sum of all previous
   operations"
   [ops account]
-  {:pre [ops account]
+  {:pre [ops (u/validate-account account)]
    :pos [(map? %)]}
   (if (contains? ops account)
     {:balance (-> (ops account) :current u/to-format)}))
@@ -58,7 +59,7 @@
 (defn bank-statement
   "Log of operations of an account between two dates"
   [ops account start-date end-date]
-  {:pre [ops account start-date end-date]
+  {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
    :pos [(map? %)]}
   (let [within? (u/within? start-date end-date)
         operations (get-in ops [account :operations])
@@ -73,7 +74,7 @@
   Each element of the vector is a map with start date, negative balance and
   end date if the current balance is non negative"
   [ops account]
-  {:pre [ops account]
+  {:pre [ops (u/validate-account account)]
    :pos [(map? %)]}
   {:debts (let [mconj (fn [coll & xs] (apply conj coll (filter map? xs)))
                 operations (get-in ops [account :operations])

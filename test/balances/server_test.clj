@@ -84,31 +84,54 @@
             response (app (mock/request :post "/new" (dissoc m :amount :date)))]
         (is (or (= result1 response) (= result2 response)))))))
 
+(deftest empty-parameters-test
+  (reset! ops {})
+  (let [m (opp 1 "Credit" 100.0 "15/10")]
+    (testing "empty account"
+      (let [result {:status 422, :body "Empty parameter: account", :headers {}}
+            response (app (mock/request :post "/new" (assoc m :account "")))]
+        (is (= result response))))
+
+    (testing "empty description"
+      (let [result {:status 422, :body "Empty parameter: description", :headers {}}
+            response (app (mock/request :post "/new" (assoc m :description "")))]
+        (is (= result response))))
+
+    (testing "empty amount"
+      (let [result {:status 422, :body "Empty parameter: amount", :headers {}}
+            response (app (mock/request :post "/new" (assoc m :amount "")))]
+        (is (= result response))))
+
+    (testing "empty date"
+      (let [result {:status 422, :body "Empty parameter: date", :headers {}}
+            response (app (mock/request :post "/new" (assoc m :date "")))]
+        (is (= result response))))))
+
 (deftest new-operation-invalid-dates-test
-  (testing "for month 13"
-    (is (= 422 (:status (app (mock/request :post "/new"
-                                           (opp 1 "Credit" 100.0 "15/13")))))))
-
-  (testing "for 30/02"
-    (is (= 422 (:status (app (mock/request :post "/new"
-                                           (opp 1 "Credit" 100.0 "30/02")))))))
-
-  (testing "for 31/11"
-    (is (= 422 (:status (app (mock/request :post "/new"
-                                           (opp 1 "Credit" 100.0 "31/11"))))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "15/13"))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "30/02"))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "31/11"))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "40/11"))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "21/11/16"))))))
+  (is (= 422 (:status (app (mock/request :post "/new"
+                                         (opp 1 "Credit" 100.0 "21-11")))))))
 
 (deftest invalid-amount-test
-  (testing "An word passed as amount"
-    (is (= 422 (:status (app (mock/request
-                               :post "/new"
-                               (opp 1 "Credit" "Cheese" "20/11"))))))))
+  (testing "A word passed as amount"
+    (is (= 422 (:status (app (mock/request :post "/new"
+                                           (opp 1 "Credit" "Cheese" "20/11"))))))))
 
 
 ;;;; CURRENT BALANCE TEST
 (deftest current-balance-from-one-credit-operation-test
   (reset! ops {})
   (let [result (http-resp {:balance 100.00})
-        _ (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10" )))
+        _ (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
 
@@ -116,7 +139,7 @@
 (deftest current-balance-from-one-debit-operation-test
   (reset! ops {})
   (let [result (http-resp {:balance -120.00})
-        _ (app (mock/request :post "/new" (opp 1 "Credit" -120.0 "15/10" )))
+        _ (app (mock/request :post "/new" (opp 1 "Credit" -120.0 "15/10")))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
 
@@ -124,10 +147,10 @@
 (deftest current-balance-from-multiple-operations-test
   (reset! ops {})
   (let [result (http-resp {:balance 1201.00})
-        ops [(opp 1 "Credit"  100.50  "15/10")   ;  100.50
-             (opp 1 "Debit"  -120.00  "16/10" )  ; -19.50
-             (opp 1 "Deposit" 220.50  "17/10" )  ;  201.00
-             (opp 1 "Salary"  1000.00 "18/10" )]];  1201.00
+        ops [(opp 1 "Credit"  100.50  "15/10")  ;  100.50
+             (opp 1 "Debit"  -120.00  "16/10")  ; -19.50
+             (opp 1 "Deposit" 220.50  "17/10")  ;  201.00
+             (opp 1 "Salary"  1000.00 "18/10")]];  1201.00
     (doseq [op ops] (app (mock/request :post "/new" op)))
     (is (= result (app (mock/request :post "/balance" {:account 1}))))))
 
@@ -255,6 +278,15 @@
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/statement" {}))
            {:status 422 :headers {} :body "Missing parameter: account"}))))
+
+(deftest bank-statement-invalid-dates-test
+  (testing "End date before Start date"
+    (is (= (app (mock/request :post "/statement" {:start "20/10"
+                                                  :end "10/10"
+                                                  :account 1}))
+           {:status 422
+            :headers {}
+            :body "Error: End date must be after Start date"}))))
 
 
 ;;;; DEBT PERIODS TEST

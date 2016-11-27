@@ -11,8 +11,7 @@
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
     [balances.core :refer [new-operation current-balance bank-statement
-                           debt-periods]]
-    [balances.util :as u]))
+                           debt-periods]]))
 
 (def ops
   "State variable.
@@ -20,36 +19,18 @@
   no need to be coordinated"
   (atom {}))
 
-(defn- validate
-  "Validates the parameters of a function, since all values are necessary to
-  properly continue.
-  Also, validates the date passed as string and the amount (which needs to be
-  a number)"
-  [m type]
-  (let [fields {:balance   [:account]
-                :new       [:account :amount :description :date],
-                :debt      [:account]
-                :statement [:account :start :end]}
-        miss (->> type fields (drop-while m) first)]
-    (if miss
-      (str "Missing parameter: " (name miss))
-      (let [{:keys [amount date start end]} m]
-        (case type
-          :new (or (u/validate-date date) (u/validate-number amount))
-          :statement (u/validate-date start end)
-          nil)))))
-
 (defn- handler
   [func params]
-  (if-let [miss (validate params func)]
-    (res/status (res/response miss) 422)
-    (let [{:keys [account start end]} params]
-      (res/response
+  (try
+    (res/response
+      (let [{:keys [account start end]} params]
         (case func
           :new       (do (swap! ops new-operation params) "ok") ; side-effect: update ops
           :balance   (current-balance @ops account)
           :statement (bank-statement @ops account start end)
-          :debt      (debt-periods @ops account))))))
+          :debt      (debt-periods @ops account))))
+    (catch Exception e
+      (res/status (-> e .getMessage res/response) 422))))
 
 (defroutes app-routes
            (POST "/new"       [& params] (handler :new       params))

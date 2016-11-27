@@ -35,12 +35,6 @@
     (fn [current-date]
       (t/within? (t/interval start-date# end-date#) current-date))))
 
-(defn validate-date
-  "Validate a string as date"
-  [& strs]
-  (try (doseq [s strs] (str->date s))
-       (catch Exception e (.getMessage e))))
-
 
 ;; Number functions
 (defn abs
@@ -55,12 +49,44 @@
   places"
   [number]
   (-> (if (string? number) (Double. number) (double number))
-      (* 100) int (/ 100) double))
+      (* 100) long (/ 100) double))
 
-(defn validate-number
-  "Validate if the object passed as number is really a number"
-  [obj]
-  (try (cond
-         (and (string? obj) (Double. obj)) nil
-         (double obj) nil)
-       (catch NumberFormatException e (str e))))
+
+;; Validation
+(defn validate-amount
+  [amount]
+  (cond
+    (nil? amount) (throw (Exception. "Missing parameter: amount"))
+    (and (string? amount) (empty? amount))
+      (throw (Exception. "Empty parameter: amount"))
+    :else (let [msg "Error: transaction must be different than zero"]
+            (if (= 0.0 (to-format amount)) (throw (Exception. msg)) true))))
+
+(defn validate-date
+  ([str]
+   (cond
+     (nil? str) (throw (Exception. "Missing parameter: date"))
+     (empty? str) (throw (Exception. "Empty parameter: date"))
+     :else (str->date str)))
+  ([str-start str-end]
+   (cond
+     (nil? str-start) (throw (Exception. "Missing parameter: start"))
+     (nil? str-end) (throw (Exception. "Missing parameter: end"))
+     (t/after? (str->date str-start) (str->date str-end))
+      (throw (Exception. "Error: End date must be after Start date"))
+     :else true)))
+
+(defn validate-account
+  [account]
+  (cond
+    (nil? account) (throw (Exception. "Missing parameter: account"))
+    (and (string? account) (empty? account))
+      (throw (Exception. "Empty parameter: account"))
+    :else true))
+
+(defn validate-description
+  [description]
+  (cond
+    (nil? description) (throw (Exception. "Missing parameter: description"))
+    (empty? description) (throw (Exception. "Empty parameter: description"))
+    :else true))
