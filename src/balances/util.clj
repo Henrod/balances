@@ -5,7 +5,7 @@
             [clj-time.format :as f]))
 
 ;;;; Date functions
-(def formatter (f/formatter "dd/MM"))
+(def ^:private formatter (f/formatter "dd/MM"))
 
 (defn str->date
   "Constructs a Date from a String. Its format must be dd/MM"
@@ -42,7 +42,8 @@
   [n]
   (if (number? n)
     (max n (- n))
-    (throw (Exception. "Only numbers can have an absolute value"))))
+    (throw (IllegalArgumentException.
+             "Only numbers can have an absolute value"))))
 
 (defn to-format
   "Converts a number or the string of a number to double with two decimal
@@ -53,40 +54,42 @@
 
 
 ;; Validation
+(defn- invalid
+  [^String msg]
+  (throw (IllegalArgumentException. msg)))
+
 (defn validate-amount
   [amount]
   (cond
-    (nil? amount) (throw (Exception. "Missing parameter: amount"))
-    (and (string? amount) (empty? amount))
-      (throw (Exception. "Empty parameter: amount"))
+    (nil? amount) (invalid "Missing parameter: amount")
+    (and (string? amount) (empty? amount)) (invalid "Empty parameter: amount")
     :else (let [msg "Error: transaction must be different than zero"]
-            (if (= 0.0 (to-format amount)) (throw (Exception. msg)) true))))
+            (if (= 0.0 (to-format amount)) (invalid msg) true))))
 
 (defn validate-date
   ([str]
    (cond
-     (nil? str) (throw (Exception. "Missing parameter: date"))
-     (empty? str) (throw (Exception. "Empty parameter: date"))
+     (nil? str)   (invalid "Missing parameter: date")
+     (empty? str) (invalid "Empty parameter: date")
      :else (str->date str)))
   ([str-start str-end]
    (cond
-     (nil? str-start) (throw (Exception. "Missing parameter: start"))
-     (nil? str-end) (throw (Exception. "Missing parameter: end"))
+     (nil? str-start) (invalid "Missing parameter: start")
+     (nil? str-end)   (invalid "Missing parameter: end")
      (t/after? (str->date str-start) (str->date str-end))
-      (throw (Exception. "Error: End date must be after Start date"))
+      (invalid "Error: End date must be after Start date")
      :else true)))
 
 (defn validate-account
   [account]
   (cond
-    (nil? account) (throw (Exception. "Missing parameter: account"))
-    (and (string? account) (empty? account))
-      (throw (Exception. "Empty parameter: account"))
+    (nil? account) (invalid "Missing parameter: account")
+    (and (string? account) (empty? account)) (invalid "Empty parameter: account")
     :else true))
 
 (defn validate-description
   [description]
   (cond
-    (nil? description) (throw (Exception. "Missing parameter: description"))
-    (empty? description) (throw (Exception. "Empty parameter: description"))
+    (nil? description)   (invalid "Missing parameter: description")
+    (empty? description) (invalid "Empty parameter: description")
     :else true))

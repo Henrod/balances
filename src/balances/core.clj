@@ -10,7 +10,10 @@
     (str description " " (format "%.2f" (u/abs amount)))))
 
 (defn build
-  "Builds a Operation instance from description, amount and date"
+  "Constructs an Operation instance from description and amount.
+  Description is a String describing this operation.
+  Amount is a number or a string of a number that is converted to double with
+  two decimal places to represent an amount of money."
   [description amount]
   {:pre [(instance? String description)]}
   (Operation. description (u/to-format amount)))
@@ -18,10 +21,12 @@
 
 ;;;; Helper function
 (defn compute-balances
-  "Receive a sorted-map called operations as input.
-  Compute the balance for each date."
+  "Compute the balance for each date by adding the total amount of operations
+   from the current date with the balance of the previous date.
+  Operatins is a sorted-map called operations as input."
   [operations]
-  {:pos [(map? %)]}
+  {:pre [(or (nil? operations) (and (sorted? operations) (map? operations)))]
+   :pos [(sorted? %) (map? %)]}
   (letfn [(sum-last [v m] (u/to-format (+ v (if (empty? m) 0 (-> m last second)))))
           (compress [a] (apply + (pmap :amount a)))
           (build-sum [m [k v]] (assoc m k (sum-last v m)))]
@@ -31,7 +36,14 @@
 
 ;;;; Available functions
 (defn new-operation
-  "Returns a new map with a new Operation"
+  "Takes the map ops and a map with account, description, amount and date.
+  Ops is the map of operations.
+  Account is an identifier different than nil and not empty.
+  Description is a string that cannot be empty.
+  Amount can be a number or a string of a number and must be different than
+   zero. Actually, its absolute value must be greater or equal than 0.01.
+  Date is a string representing a date in the format dd/MM. There can only be
+   valid months and valid days for the specific month."
   [ops {:keys [account description amount date]}]
   {:pre [ops (u/validate-description description) (u/validate-account account)
          (u/validate-date date) (u/validate-amount amount)]
@@ -48,8 +60,10 @@
          :operations (sorted-map date# [(build description amount#)])}))))
 
 (defn current-balance
-  "Current balance of an account calculated from the sum of all previous
-  operations"
+  "Current balance of an account.
+  It's the sum of the amounts of all operations since the beginning.
+  Ops is the map of operations.
+  Account is an identifier different than nil and not empty."
   [ops account]
   {:pre [ops (u/validate-account account)]
    :pos [(map? %)]}
@@ -57,7 +71,11 @@
     {:balance (-> (ops account) :current u/to-format)}))
 
 (defn bank-statement
-  "Log of operations of an account between two dates"
+  "Log of operations of an account between two dates.
+  Ops is the map of operations.
+  Account is an identifier different than nil and not empty.
+  Start-date and end-date are both strings of dates in the format dd/MM. They
+   must be valid dates and end-date must be after start-date."
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
    :pos [(map? %)]}
@@ -72,7 +90,9 @@
 (defn debt-periods
   "Map with a vector of periods when the account had a negative balance.
   Each element of the vector is a map with start date, negative balance and
-  end date if the current balance is non negative"
+   end date if the current balance is non negative
+  Ops is the map of operations.
+  Account is an identifier different than nil and not empty."
   [ops account]
   {:pre [ops (u/validate-account account)]
    :pos [(map? %)]}

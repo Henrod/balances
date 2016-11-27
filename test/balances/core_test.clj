@@ -21,13 +21,13 @@
   (let [day1 (date "06/12")
         day2 (date "07/12")
         ops {1 {:current 821.48
-                :operations {day1 [(build "Debit" -146.32)
-                                   (build "Purchase" -32.20)]
-                             day2 [(build "Credit" 1000.00)]}}
+                :operations (sorted-map day1 [(build "Debit" -146.32)
+                                              (build "Purchase" -32.20)]
+                                        day2 [(build "Credit" 1000.00)])}
              2 {:current 5767.34
-                :operations {day1 [(build "Salary" 4267.34)]
-                             day2 [(build "Deposit" 500.00)
-                                   (build "Credit" 1000.00)]}}}
+                :operations (sorted-map day1 [(build "Salary" 4267.34)]
+                                        day2 [(build "Deposit" 500.00)
+                                              (build "Credit" 1000.00)])}}
         balances-1 (compute-balances (get-in ops [1 :operations]))
         balances-2 (compute-balances (get-in ops [2 :operations]))
         result-1 {day1 -178.52 day2 821.48}
@@ -46,25 +46,30 @@
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
             res {1 {:current    1000.00
-                    :operations {(date "15/10") [(build "Deposit" 1000.00)]}}}]
+                    :operations (sorted-map
+                                  (date "15/10") [(build "Deposit" 1000.00)])}}]
         (is (= ops res))))
 
     (testing "Add new operation"
       (let [ops (-> (new-operation {} opr-1) (new-operation opr-2))
             res {1 {:current 200.00
-                    :operations {(date "15/10") [(build "Deposit" 1000.00)]
-                                 (date "17/10") [(build "Purchase" -800.00)]}}}]
+                    :operations (sorted-map
+                                  (date "15/10") [(build "Deposit" 1000.00)]
+                                  (date "17/10") [(build "Purchase" -800.00)])}}]
         (is (= ops res))))
 
     (testing "Add multiple accounts"
       (let [ops (reduce new-operation {} [opr-1 opr-2 opr-3 opr-4])
             res {1 {:current 200.00
-                    :operations {(date "15/10") [(build "Deposit" 1000.00)]
-                                 (date "17/10") [(build "Purchase" -800.00)]}}
+                    :operations (sorted-map
+                                  (date "15/10") [(build "Deposit" 1000.00)]
+                                  (date "17/10") [(build "Purchase" -800.00)])}
                  2 {:current -199.43
-                    :operations {(date "17/11") [(build "Debit" -199.43)]}}
+                    :operations (sorted-map
+                                  (date "17/11") [(build "Debit" -199.43)])}
                  3 {:current 8123.30
-                    :operations {(date "10/10") [(build "Salary" 8123.30)]}}}]
+                    :operations (sorted-map
+                                  (date "10/10") [(build "Salary" 8123.30)])}}]
         (is (= ops res))))))
 
 

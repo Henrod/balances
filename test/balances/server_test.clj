@@ -151,11 +151,11 @@
 (deftest current-balance-from-multiple-operations-test
   (reset! ops {})
   (let [result (http-resp {:balance 1201.00})
-        ops [(opp 1 "Credit"  100.50  "15/10")  ;  100.50
-             (opp 1 "Debit"  -120.00  "16/10")  ; -19.50
-             (opp 1 "Deposit" 220.50  "17/10")  ;  201.00
-             (opp 1 "Salary"  1000.00 "18/10")]];  1201.00
-    (doseq [op ops] (app (mock/request :post "/new" op)))
+        operations [(opp 1 "Credit"  100.50  "15/10")  ;  100.50
+                    (opp 1 "Debit"  -120.00  "16/10")  ; -19.50
+                    (opp 1 "Deposit" 220.50  "17/10")  ;  201.00
+                    (opp 1 "Salary"  1000.00 "18/10")]];  1201.00
+    (doseq [op operations] (app (mock/request :post "/new" op)))
     (is (= result (app (mock/request :post "/balance" {:account 1}))))))
 
 
@@ -165,12 +165,12 @@
         result2 (http-resp {:balance -319.99})
         result3 (http-resp {:balance 5000.75})
         result4 {:status 200 :headers {} :body nil}
-        ops [(opp 1 "Credit"    100.50    "15/10")    ; 1: 100.50
-             (opp 2 "Debit"    -120.0     "15/10")    ; 2: -120.0
-             (opp 2 "Purchase" -199.99    "20/10")    ; 2: -319.99
-             (opp 3 "Salary"    5000.7565 "12/10")    ; 3: 5000.75
-             (opp 1 "Salary"    1000.0    "18/10")]]  ; 1: 1100.50
-    (doseq [op ops] (app (mock/request :post "/new" op)))
+        operations [(opp 1 "Credit"    100.50    "15/10")    ; 1: 100.50
+                    (opp 2 "Debit"    -120.0     "15/10")    ; 2: -120.0
+                    (opp 2 "Purchase" -199.99    "20/10")    ; 2: -319.99
+                    (opp 3 "Salary"    5000.7565 "12/10")    ; 3: 5000.75
+                    (opp 1 "Salary"    1000.0    "18/10")]]  ; 1: 1100.50
+    (doseq [op operations] (app (mock/request :post "/new" op)))
 
     (is (= result1 (app (mock/request :post "/balance" {:account 1}))))
     (is (= result2 (app (mock/request :post "/balance" {:account 2}))))
@@ -296,17 +296,17 @@
 ;;;; DEBT PERIODS TEST
 (deftest debt-periods-server-test
   (reset! ops {})
-  (let [ops [(opp 1 "Credit"    175.34   "01/01")
-             (opp 1 "Debit"    -200.00   "03/01")
-             (opp 1 "Salary"    50173.48 "10/01")
-             (opp 2 "Salary"    6837.56  "10/01")
-             (opp 2 "Purchase" -200.23   "14/01")
-             (opp 2 "Purchase" -31.23    "14/01")
-             (opp 2 "Debit"    -1123.00  "02/02")
-             (opp 3 "Debit"    -1520.00  "05/01")
-             (opp 3 "Purchase" -154.00   "19/01")
-             (opp 3 "Debit"    -140.33   "22/02")]]
-    (doseq [op ops] (app (mock/request :post "/new" op)))
+  (let [operations [(opp 1 "Credit"    175.34   "01/01")
+                    (opp 1 "Debit"    -200.00   "03/01")
+                    (opp 1 "Salary"    50173.48 "10/01")
+                    (opp 2 "Salary"    6837.56  "10/01")
+                    (opp 2 "Purchase" -200.23   "14/01")
+                    (opp 2 "Purchase" -31.23    "14/01")
+                    (opp 2 "Debit"    -1123.00  "02/02")
+                    (opp 3 "Debit"    -1520.00  "05/01")
+                    (opp 3 "Purchase" -154.00   "19/01")
+                    (opp 3 "Debit"    -140.33   "22/02")]]
+    (doseq [op operations] (app (mock/request :post "/new" op)))
 
     (testing "Account number 1"
       (let [response (app (mock/request :post "/debt" {:account 1}))
