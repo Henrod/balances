@@ -52,11 +52,9 @@
   {:pre [ops (u/validate-description description) (u/validate-account account)
          (u/validate-date date) (u/validate-amount amount)]
    :post [(map? %)]}
-  (let [date# (u/str->date date)
-        amount# (u/to-format amount)]
+  (let [date# (u/str->date date) amount# (u/to-format amount)]
     (if (contains? ops account)
-      (-> ops
-          (update-in [account :current] #(+ % amount#))
+      (-> (update-in ops [account :current] #(+ % amount#))
           (update-in [account :operations date#] conj (build description amount)))
       (assoc ops
         account
@@ -83,13 +81,14 @@
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
    :post [(map? %)]}
-  (let [within? (u/within? start-date end-date)
-        operations (get-in ops [account :operations])
-        dated-ops (select-keys operations (filter within? (keys operations)))
-        each-balance (compute-balances operations)]
-    (reduce (fn [m [k v]] (assoc m (u/date->str k) {:operations (map str v)
-                                                    :balance (each-balance k)}))
-      {} dated-ops)))
+  {:statement
+   (let [within? (u/within? start-date end-date)
+         operations (get-in ops [account :operations])
+         dated-ops (select-keys operations (filter within? (keys operations)))
+         each-balance (compute-balances operations)]
+     (pmap (fn [[k v]] {:date       (u/date->str k)
+                        :operations (map str v)
+                        :balance    (each-balance k)}) dated-ops))})
 
 (defn debt-periods
   "Map with a vector of periods when the account had a negative balance.
