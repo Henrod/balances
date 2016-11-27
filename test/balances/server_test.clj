@@ -42,7 +42,8 @@
                      :operations {(date "15/10") [(build "Credit" 100.00)]}}}
         response (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))]
     (is (= result @ops))
-    (is (= response {:status 200, :headers {}, :body "ok"}))))
+    (is (= response {:status 200, :headers {},
+                     :body "Credit 100.00 at 15/10"}))))
 
 
 (deftest two-new-operations-test
@@ -53,7 +54,10 @@
         response1 (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))
         response2 (app (mock/request :post "/new" (opp 1 "Debit" -120.0 "16/10")))]
     (is (= @ops result))
-    (is (= response1 response2 {:status 200, :headers {}, :body "ok"}))))
+    (is (= response1 {:status 200, :headers {},
+                      :body "Credit 100.00 at 15/10"}))
+    (is (= response2 {:status 200, :headers {},
+                      :body "Debit 120.00 at 16/10"}))))
 
 
 (deftest new-operation-missing-parameters-test

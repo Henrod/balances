@@ -23,9 +23,9 @@
   [operations]
   {:pos [(map? %)]}
   (letfn [(sum-last [v m] (u/to-format (+ v (if (empty? m) 0 (-> m last second)))))
-          (compress [m [k v]] (assoc m k (apply + (map :amount v))))
+          (compress [a] (apply + (pmap :amount a)))
           (build-sum [m [k v]] (assoc m k (sum-last v m)))]
-    (->> (reduce compress  (sorted-map) operations)
+    (->> (zipmap (keys operations) (pmap compress (vals operations)))
          (reduce build-sum (sorted-map)))))
 
 

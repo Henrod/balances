@@ -19,13 +19,21 @@
   no need to be coordinated"
   (atom {}))
 
+(defn- do-operation!
+  [ops params]
+  (swap! ops new-operation params); side-effect: update atom ops
+  (let [{:keys [account date]} params
+        date# (balances.util/str->date date)
+        op (last (get-in @ops [account :operations date#]))]
+    (str op " at " date)))
+
 (defn- handler
   [func params]
   (try
     (res/response
       (let [{:keys [account start end]} params]
         (case func
-          :new       (do (swap! ops new-operation params) "ok") ; side-effect: update ops
+          :new       (do-operation! ops params)
           :balance   (current-balance @ops account)
           :statement (bank-statement @ops account start end)
           :debt      (debt-periods @ops account))))
