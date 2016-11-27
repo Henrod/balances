@@ -200,8 +200,8 @@
     (testing "Two periods of debt with ends"
       (let [ops# (conj ops (opp 1 "Debit" -2000.00 "23/10") ; -200
                            (opp 1 "Credit" 3000.00 "26/10")); 2800
-            res {:debts [{:start "23/10" :end "25/10" :principal -200.00}
-                         {:start "19/10" :end "20/10" :principal -1200.00}]}
+            res {:debts [{:start "19/10" :end "20/10" :principal -1200.00}
+                         {:start "23/10" :end "25/10" :principal -200.00}]}
             debts (debt-periods (reduce new-operation {} ops#) 1)]
         (is (= debts res))))
 

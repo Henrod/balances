@@ -80,15 +80,16 @@
    must be valid dates and end-date must be after start-date."
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
-   :post [(map? %)]}
-  {:statement
-   (let [within? (u/within? start-date end-date)
-         operations (get-in ops [account :operations])
-         dated-ops (select-keys operations (filter within? (keys operations)))
-         each-balance (compute-balances operations)]
-     (pmap (fn [[k v]] {:date       (u/date->str k)
-                        :operations (map str v)
-                        :balance    (each-balance k)}) dated-ops))})
+   :post [(sorted? %) (map? %)]}
+  (let [within?      (u/within? start-date end-date)
+        operations   (get-in ops [account :operations])
+        dated-ops    (select-keys operations (filter within? (keys operations)))
+        each-balance (compute-balances operations)]
+
+    (reduce
+      (fn [m [k v]] (assoc m (u/date->str k) {:operations (map str v)
+                                              :balance (each-balance k)}))
+      (sorted-map) dated-ops)))
 
 (defn debt-periods
   "Map with a vector of periods when the account had a negative balance.
@@ -99,21 +100,17 @@
   [ops account]
   {:pre [ops (u/validate-account account)]
    :post [(map? %)]}
-  {:debts (let [mconj (fn [coll & xs] (apply conj coll (filter map? xs)))
-                operations (get-in ops [account :operations])
-                [head & tail] (drop-while (comp not neg? second)
-                                          (compute-balances operations))]
-            (if head
-              (reduce
-                (fn [[head# & tail#] [date balance]]
-                  (if (= balance (:principal head#))
-                    (conj tail# head#)
-                    (mconj tail#
-                           (if (contains? head# :end)
-                             head#
-                             (assoc head# :end (u/previous-day date)))
-                           (if (neg? balance)
-                             {:start (u/date->str date) :principal balance}))))
-                [{:start (-> head first u/date->str) :principal (second head)}]
-                tail)
-              []))})
+  {:debts
+   (let [operations (get-in ops [account :operations])
+         every-2 (partition 2 1 (repeat nil) (compute-balances operations))]
+     (reduce
+       (fn [a [[curr-date curr-bal] [next-date _]]]
+         (let [elm {:start (u/date->str curr-date) :principal curr-bal}
+               massoc #(if next-date (assoc % :end (u/previous-day next-date))
+                                     (dissoc % :end))
+               same? (-> a last :principal (= curr-bal))]
+           (cond
+             same?           (conj (pop a) (massoc (last a)))
+             (neg? curr-bal) (conj a (massoc elm))
+             :else a)))
+       [] every-2))})

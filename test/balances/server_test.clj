@@ -324,9 +324,9 @@
     (testing "Account number 3"
       (let [response (app (mock/request :post "/debt" {:account 3}))
             result {"debts"
-                    [{"start" "22/02" "principal" -1814.33}
+                    [{"start" "05/01" "end" "18/01" "principal" -1520.00}
                      {"start" "19/01" "end" "21/02" "principal" -1674.00}
-                     {"start" "05/01" "end" "18/01" "principal" -1520.00}]}
+                     {"start" "22/02" "principal" -1814.33}]}
             body (json/read-str (:body response))]
         (is (= body result))))))
 
