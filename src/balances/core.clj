@@ -23,15 +23,19 @@
 (defn compute-balances
   "Compute the balance for each date by adding the total amount of operations
    from the current date with the balance of the previous date.
-  Operatins is a sorted-map called operations as input."
+  Operations is a sorted-map from date to vector of Operations at that date.
+  Returns a sorted-map from date to balance ordered by date."
   [operations]
   {:pre [(or (nil? operations) (and (sorted? operations) (map? operations)))]
-   :pos [(sorted? %) (map? %)]}
-  (letfn [(sum-last [v m] (u/to-format (+ v (if (empty? m) 0 (-> m last second)))))
-          (compress [a] (apply + (pmap :amount a)))
-          (build-sum [m [k v]] (assoc m k (sum-last v m)))]
-    (->> (zipmap (keys operations) (pmap compress (vals operations)))
-         (reduce build-sum (sorted-map)))))
+   :post [(sorted? %) (map? %)]}
+  (into (sorted-map)
+        (if operations
+          (let [compress (fn [a] (apply + (pmap :amount a)))
+                [amount & ams] (pmap compress (vals operations))
+                sum-ams (fn [ve v] (conj ve (u/to-format (+ v (last ve)))))
+                amount# (u/to-format amount)]
+            (zipmap (keys operations) (reduce sum-ams [amount#] ams)))
+          {})))
 
 
 ;;;; Available functions
@@ -47,7 +51,7 @@
   [ops {:keys [account description amount date]}]
   {:pre [ops (u/validate-description description) (u/validate-account account)
          (u/validate-date date) (u/validate-amount amount)]
-   :pos [(map? %)]}
+   :post [(map? %)]}
   (let [date# (u/str->date date)
         amount# (u/to-format amount)]
     (if (contains? ops account)
@@ -66,9 +70,9 @@
   Account is an identifier different than nil and not empty."
   [ops account]
   {:pre [ops (u/validate-account account)]
-   :pos [(map? %)]}
-  (if (contains? ops account)
-    {:balance (-> (ops account) :current u/to-format)}))
+   :post [(map? %)]}
+  {:balance (if (contains? ops account)
+              (-> (ops account) :current u/to-format))})
 
 (defn bank-statement
   "Log of operations of an account between two dates.
@@ -78,7 +82,7 @@
    must be valid dates and end-date must be after start-date."
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
-   :pos [(map? %)]}
+   :post [(map? %)]}
   (let [within? (u/within? start-date end-date)
         operations (get-in ops [account :operations])
         dated-ops (select-keys operations (filter within? (keys operations)))
@@ -95,7 +99,7 @@
   Account is an identifier different than nil and not empty."
   [ops account]
   {:pre [ops (u/validate-account account)]
-   :pos [(map? %)]}
+   :post [(map? %)]}
   {:debts (let [mconj (fn [coll & xs] (apply conj coll (filter map? xs)))
                 operations (get-in ops [account :operations])
                 [head & tail] (drop-while (comp not neg? second)

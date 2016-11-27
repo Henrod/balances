@@ -88,7 +88,7 @@
       (is (= (current-balance ops 2) {:balance 8015.40})))
 
     (testing "Current balance of absent account"
-      (is (nil? (current-balance ops 3))))))
+      (is (= (current-balance ops 3) {:balance nil})))))
 
 
 ;;;; BANK STATEMENT TESTS

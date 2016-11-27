@@ -164,7 +164,7 @@
   (let [result1 (http-resp {:balance 1100.50})
         result2 (http-resp {:balance -319.99})
         result3 (http-resp {:balance 5000.75})
-        result4 {:status 200 :headers {} :body nil}
+        result4 (http-resp {:balance nil})
         operations [(opp 1 "Credit"    100.50    "15/10")    ; 1: 100.50
                     (opp 2 "Debit"    -120.0     "15/10")    ; 2: -120.0
                     (opp 2 "Purchase" -199.99    "20/10")    ; 2: -319.99
