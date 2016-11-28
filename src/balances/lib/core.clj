@@ -43,7 +43,7 @@
   "Takes the map ops and a map with account, description, amount and date.
   Ops is the map of operations.
   Account is an identifier different than nil and not empty.
-  Description is a string that cannot be empty.
+  Description is a string different than nil and not empty.
   Amount can be a number or a string of a number and must be different than
    zero. Actually, its absolute value must be greater or equal than 0.01.
   Date is a string representing a date in the format dd/MM. There can only be
@@ -93,9 +93,9 @@
       (sorted-map) dated-ops)))
 
 (defn debt-periods
-  "Map with a vector of periods when the account had a negative balance.
+  "Map with a vector of periods of negative balance of an account.
   Each element of the vector is a map with start date, negative balance and
-   end date if the current balance is non negative
+   end date if the current-balance is non negative.
   Ops is the map of operations.
   Account is an identifier different than nil and not empty."
   [ops account]
