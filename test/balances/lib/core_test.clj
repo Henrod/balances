@@ -1,9 +1,9 @@
-(ns balances.core-test
+(ns balances.lib.core-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [balances.core :refer [new-operation current-balance build
+            [balances.lib.core :refer [new-operation current-balance build
                                    bank-statement debt-periods
                                    compute-balances]]
-            [balances.util :as util]))
+            [balances.lib.util :as util]))
 
 (defn- opp
   "Operation params: build a map more succinctly"

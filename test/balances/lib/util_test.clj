@@ -1,5 +1,5 @@
-(ns balances.util-test
-  (:require [balances.util :as util]
+(ns balances.lib.util-test
+  (:require [balances.lib.util :as util]
             [clojure.test :refer [deftest testing is]]))
 
 (deftest previous-day-test
@@ -21,6 +21,16 @@
 
   (testing "day in the end of a year"
     (is (= "01/01" (util/date->str (util/next-day "31/12"))))))
+
+(deftest within-test
+  (let [within (util/within? "9/3" "29/03")]
+    (is (true? (within (util/str->date "9/03"))))
+    (is (true? (within (util/str->date "15/03"))))
+    (is (true? (within (util/str->date "29/03"))))
+
+    (is (false? (within (util/str->date "1/3"))))
+    (is (false? (within (util/str->date "30/3"))))
+    (is (false? (within (util/str->date "1/02"))))))
 
 (deftest abs-test
   (testing "for integers"

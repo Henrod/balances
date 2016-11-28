@@ -1,4 +1,4 @@
-(ns balances.server
+(ns balances.server.server
   "Server functions.
   A state variable is made necessary to hold all past operations."
   (:require
@@ -10,9 +10,8 @@
     [ring.middleware.keyword-params :refer [wrap-keyword-params]]
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
-    [balances.core :refer [new-operation current-balance bank-statement
-                           debt-periods]]
-    [balances.util :refer [to-format abs]]))
+    [balances.lib.core :refer [new-operation current-balance bank-statement
+                               debt-periods]]))
 
 (def ops
   "State variable.
@@ -24,7 +23,7 @@
   [ops params]
   (swap! ops new-operation params); side-effect: update atom ops
   (let [{:keys [account date]} params
-        date# (balances.util/str->date date)
+        date# (balances.lib.util/str->date date)
         op (last (get-in @ops [account :operations date#]))]
     (str op " at " date)))
 

@@ -1,4 +1,4 @@
-(ns balances.util
+(ns balances.lib.util
   "Date functions and other simple and generic helper functions.
   All functions are pure"
   (:require [clj-time.core :as t]

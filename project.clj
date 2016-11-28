@@ -3,7 +3,7 @@
   :url "https://github.com/Henrod/balances"
   :license {:name "MIT License"
             :url "https://opensource.org/licenses/MIT"}
-  :main balances.server
+  :main balances.server.server
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [clj-time "0.12.2"]
                  [ring "1.5.0"]

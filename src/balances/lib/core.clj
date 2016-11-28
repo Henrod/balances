@@ -1,7 +1,7 @@
-(ns balances.core
+(ns balances.lib.core
   "Core functions for the bank operations.
   All functions are pure."
-  (:require [balances.util :as u]))
+  (:require [balances.lib.util :as u]))
 
 ;;;; Record definition
 (defrecord Operation [description amount]
