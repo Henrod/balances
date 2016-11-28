@@ -11,7 +11,8 @@
     [ring.adapter.jetty :refer [run-jetty]]
     [compojure.core :refer [defroutes GET POST]]
     [balances.core :refer [new-operation current-balance bank-statement
-                           debt-periods]]))
+                           debt-periods]]
+    [balances.util :refer [to-format abs]]))
 
 (def ops
   "State variable.
@@ -22,10 +23,9 @@
 (defn- do-operation!
   [ops params]
   (swap! ops new-operation params); side-effect: update atom ops
-  (let [{:keys [account date]} params
-        date# (balances.util/str->date date)
-        op (last (get-in @ops [account :operations date#]))]
-    (str op " at " date)))
+  (let [{:keys [description amount date]} params]
+    (str description " " (->> amount to-format abs (format "%.2f"))
+         " at " date)))
 
 (defn- handler
   [func params]

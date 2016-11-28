@@ -30,7 +30,7 @@
                                               (build "Credit" 1000.00)])}}
         balances-1 (compute-balances (get-in ops [1 :operations]))
         balances-2 (compute-balances (get-in ops [2 :operations]))
-        result-1 {day1 -178.52 day2 821.48}
+        result-1 {day1 -178.51 day2 821.49}
         result-2 {day1 4267.34 day2 5767.34}]
     (is (= balances-1 result-1))
     (is (= balances-2 result-2))))

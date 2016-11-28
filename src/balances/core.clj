@@ -105,7 +105,8 @@
          every-2 (partition 2 1 (repeat nil) (compute-balances operations))
          sel (fn [a [[curr-date curr-bal] [next-date _]]]
                (let [l (last a)
-                     elm {:start (u/date->str curr-date) :principal curr-bal}
+                     elm {:start (u/date->str curr-date)
+                          :principal (u/to-format curr-bal)}
                      massoc #(if next-date (assoc % :end (u/previous-day next-date))
                                            (dissoc % :end))
                      plateau? (and (= (:principal l) curr-bal)

@@ -49,8 +49,8 @@
   "Converts a number or the string of a number to double with two decimal
   places"
   [number]
-  (-> (if (string? number) (Double. number) (double number))
-      (* 100) long (/ 100) double))
+  (-> (if (string? number) (read-string number) (double number))
+      bigdec (* 100) long (/ 100) double))
 
 
 ;; Validation
