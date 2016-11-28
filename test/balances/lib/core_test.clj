@@ -328,6 +328,88 @@
   (is (thrown? AssertionError
                (debt-periods nil 1)) "No ops"))
 
-;TODO: construir teste com todos os casos de forma didatica e clara
 (deftest complete-test
-  (let []))
+  (let [operations [(opp 1 "Credit"    "100.00"  "10/04")
+                    (opp 1 "Purchase"   -200     "12/04")
+                    (opp 1 "Purchase"   -300     "12/04")
+                    (opp 1 "Withdrawal" -50      "12/04")
+                    (opp 1 "Credit"      1000.00 "20/04")
+
+                    (opp 2 "Debit"    -1200.50 "21/04")
+                    (opp 2 "Deposit"   200.50  "16/04")
+                    (opp 2 "Credit"    500     "10/04")
+                    (opp 2 "Purchase" -1000    "01/04")
+                    (opp 2 "Deposit"   "500"   "10/04")
+
+                    (opp 3 "Debit"      -236.50    "6/04")
+                    (opp 3 "Salary"      5000.00   "10/04")
+                    (opp 3 "Purchase"   -3500.00   "10/04")
+                    (opp 3 "Debit"      -1200.00   "10/04")
+                    (opp 3 "Withdrawal" -300.00    "10/04")]
+        ops (reduce new-operation {} operations)]
+
+    (testing "Account number 1"
+      (is (= (current-balance ops 1)
+             {:balance 550.00}))
+      (is (= (bank-statement ops 1 "10/4" "20/04")
+             {"10/04" {:balance 100.00
+                       :operations ["Credit 100.00"]}
+              "12/04" {:balance -450.00
+                       :operations ["Purchase 200.00"
+                                    "Purchase 300.00"
+                                    "Withdrawal 50.00"]}
+              "20/04" {:balance 550.00
+                       :operations ["Credit 1000.00"]}}))
+      (is (= (debt-periods ops 1)
+             {:debts [{:start "12/04" :principal -450.00 :end "19/04"}]})))
+
+    (testing "Account number 2"
+      (is (= (current-balance ops 2)
+             {:balance -1000.00}))
+      (is (= (bank-statement ops 2 "01/04" "30/04")
+             {"01/04" {:balance -1000.00
+                       :operations ["Purchase 1000.00"]}
+              "10/04" {:balance 0.0
+                       :operations ["Credit 500.00"
+                                    "Deposit 500.00"]}
+              "16/04" {:balance 200.50
+                       :operations ["Deposit 200.50"]}
+              "21/04" {:balance -1000.00
+                       :operations ["Debit 1200.50"]}}))
+      (is (= (debt-periods ops 2)
+             {:debts [{:start "01/04" :principal -1000.00 :end "09/04"}
+                      {:start "21/04" :principal -1000.00}]})))
+
+    (testing "Account number 3"
+      (is (= (current-balance ops 3)
+             {:balance -236.50}))
+      (is (= (bank-statement ops 3 "06/04" "10/04")
+             {"06/04" {:balance -236.50
+                       :operations ["Debit 236.50"]}
+              "10/04" {:balance -236.50
+                       :operations ["Salary 5000.00"
+                                    "Purchase 3500.00"
+                                    "Debit 1200.00"
+                                    "Withdrawal 300.00"]}}))
+      (is (= (debt-periods ops 3)
+             {:debts [{:start "06/04" :principal -236.50}]})))
+
+    (is (= ops
+           {1 {:current 550.0
+               :operations {(date "10/04") [(build "Credit"      100.0)]
+                            (date "12/04") [(build "Purchase"   -200.00)
+                                            (build "Purchase"   -300.00)
+                                            (build "Withdrawal" -50.00)]
+                            (date "20/04") [(build "Credit"      1000.00)]}}
+            2 {:current -1000.00
+               :operations {(date "01/04") [(build "Purchase" -1000.00)]
+                            (date "10/04") [(build "Credit"    500.00)
+                                            (build "Deposit"   500.00)]
+                            (date "16/04") [(build "Deposit"   200.50)]
+                            (date "21/04") [(build "Debit"    -1200.50)]}}
+            3 {:current -236.50
+               :operations {(date "06/04") [(build "Debit"      -236.50)]
+                            (date "10/04") [(build "Salary"      5000.00)
+                                            (build "Purchase"   -3500.00)
+                                            (build "Debit"      -1200.00)
+                                            (build "Withdrawal" -300.00)]}}}))))
