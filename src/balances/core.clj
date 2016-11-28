@@ -102,15 +102,16 @@
    :post [(map? %)]}
   {:debts
    (let [operations (get-in ops [account :operations])
-         every-2 (partition 2 1 (repeat nil) (compute-balances operations))]
-     (reduce
-       (fn [a [[curr-date curr-bal] [next-date _]]]
-         (let [elm {:start (u/date->str curr-date) :principal curr-bal}
-               massoc #(if next-date (assoc % :end (u/previous-day next-date))
-                                     (dissoc % :end))
-               same? (-> a last :principal (= curr-bal))]
-           (cond
-             same?           (conj (pop a) (massoc (last a)))
-             (neg? curr-bal) (conj a (massoc elm))
-             :else a)))
-       [] every-2))})
+         every-2 (partition 2 1 (repeat nil) (compute-balances operations))
+         sel (fn [a [[curr-date curr-bal] [next-date _]]]
+               (let [l (last a)
+                     elm {:start (u/date->str curr-date) :principal curr-bal}
+                     massoc #(if next-date (assoc % :end (u/previous-day next-date))
+                                           (dissoc % :end))
+                     plateau? (and (= (:principal l) curr-bal)
+                                   (= (:end l) (u/previous-day curr-date)))]
+                 (cond
+                   plateau?        (conj (pop a) (massoc l))
+                   (neg? curr-bal) (conj a (massoc elm))
+                   :else a)))]
+     (reduce sel [] every-2))})

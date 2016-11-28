@@ -334,3 +334,7 @@
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/debt" {}))
            {:status 422 :headers {} :body "Missing parameter: account"}))))
+
+;TODO: construir teste com todos os casos de forma didatica e clara
+(deftest complete-server-test
+  (let []))

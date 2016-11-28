@@ -219,6 +219,16 @@
                (opp 1 "Salary"    1100.00 "20/01")]
           res {:debts [{:start "12/01" :principal -100.00 :end "19/01"}]}
           debts (debt-periods (reduce new-operation {} ops) 1)]
+      (is (= debts res))))
+
+  (testing "Seperate periods with same debt"
+    (let [ops [(opp 1 "Debit"    -100.00  "12/01")
+               (opp 1 "Credit"    200.00  "15/01")
+               (opp 1 "Purchase" -200.00  "17/01")
+               (opp 1 "Salary"    1100.00 "20/01")]
+          res {:debts [{:start "12/01" :principal -100.00 :end "14/01"}
+                       {:start "17/01" :principal -100.00 :end "19/01"}]}
+          debts (debt-periods (reduce new-operation {} ops) 1)]
       (is (= debts res)))))
 
 
@@ -258,3 +268,7 @@
       (let [debts (debt-periods ops 2)
             res {:debts []}]
         (is (= debts res))))))
+
+;TODO: construir teste com todos os casos de forma didatica e clara
+(deftest complete-test
+  (let []))
