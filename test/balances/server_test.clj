@@ -36,10 +36,11 @@
 
 
 ;;;; NEW OPERATION TEST
-#_(deftest one-new-operation-test
+(deftest one-new-operation-test
   (reset! ops {})
   (let [result {"1" {:current 100.00
-                     :operations {(date "15/10") [(build "Credit" 100.00)]}}}
+                     :operations (sorted-map
+                                   (date "15/10") [(build "Credit" 100.00)])}}
         response (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))]
     (is (= result @ops))
     (is (= response {:status 200, :headers {},
@@ -74,10 +75,11 @@
 
   (testing "ops final result"
     (let [result {"1" {:current -23.00
-                       :operations {(date "15/10") [(build "Credit" 100.00)]
-                                    (date "16/10") [(build "Debit" -124.00)
-                                                    (build "Debit" -125.00)
-                                                    (build "Credit" 126.00)]}}}]
+                       :operations (sorted-map
+                                     (date "15/10") [(build "Credit" 100.00)]
+                                     (date "16/10") [(build "Debit" -124.00)
+                                                     (build "Debit" -125.00)
+                                                     (build "Credit" 126.00)])}}]
       (is (= result @ops)))))
 
 
@@ -355,7 +357,3 @@
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/debt" {}))
            {:status 422 :headers {} :body "Missing parameter: account"}))))
-
-;TODO: construir teste com todos os casos de forma didatica e clara
-(deftest complete-server-test
-  (let []))
