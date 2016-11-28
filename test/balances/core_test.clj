@@ -172,11 +172,11 @@
                     (opp 1 "Credit" 5000.00 "19/10")
                     (opp 1 "Withdrawal" -3800.00 "19/10")]
         res {"15/10" {:balance 1000.00 :operations ["Deposit 1000.00"]}
-             "19/10" {:balance 3000.00 :operations ["Withdrawal 3800.00"
-                                                    "Credit 5000.00"]}
-             "16/10" {:balance 1800.00 :operations ["Debit 2000.00"
+             "16/10" {:balance 1800.00 :operations ["Purchase 1200.00"
                                                     "Salary 4000.00"
-                                                    "Purchase 1200.00"]}}
+                                                    "Debit 2000.00"]}
+             "19/10" {:balance 3000.00 :operations ["Credit 5000.00"
+                                                    "Withdrawal 3800.00"]}}
         ops (reduce new-operation {} operations)]
 
     (testing "Multiple operations on 16/10 and 19/10"

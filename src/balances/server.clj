@@ -20,12 +20,13 @@
   no need to be coordinated"
   (atom {}))
 
-(defn- do-operation!
+(defn do-operation!
   [ops params]
   (swap! ops new-operation params); side-effect: update atom ops
-  (let [{:keys [description amount date]} params]
-    (str description " " (->> amount to-format abs (format "%.2f"))
-         " at " date)))
+  (let [{:keys [account date]} params
+        date# (balances.util/str->date date)
+        op (last (get-in @ops [account :operations date#]))]
+    (str op " at " date)))
 
 (defn- handler
   [func params]

@@ -55,7 +55,8 @@
   (let [date# (u/str->date date) amount# (u/to-format amount)]
     (if (contains? ops account)
       (-> (update-in ops [account :current] #(+ % amount#))
-          (update-in [account :operations date#] conj (build description amount)))
+          (update-in [account :operations date#]
+                     (comp vec conj) (build description amount)))
       (assoc ops
         account
         {:current amount#
