@@ -38,9 +38,9 @@
 ;;;; NEW OPERATION TESTS
 (deftest new-operation-test
   (let [opr-1 (opp 1 "Deposit"   "1000"     "15/10")
-        opr-2 (opp 1 "Purchase" -800.00     "17/10")
+        opr-2 (opp 1 "Purchase" -800     "17/10")
         opr-3 (opp 2 "Debit"    "-199.43"   "17/11")
-        opr-4 (opp 3 "Salary"    8123.30999 "10/10")]
+        opr-4 (opp 3 "Salary"    8123.3 "10/10")]
 
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
@@ -66,9 +66,9 @@
                  2 {:current -199.43M
                     :operations (sorted-map
                                   (date "17/11") [(build "Debit" -199.43)])}
-                 3 {:current 8123.30999M
+                 3 {:current 8123.30M
                     :operations (sorted-map
-                                  (date "10/10") [(build "Salary" 8123.30999)])}}]
+                                  (date "10/10") [(build "Salary" 8123.30)])}}]
         (is (= ops res))))))
 
 
@@ -94,14 +94,26 @@
                  (new-operation {} (assoc good :date ""))) "Empty date")
 
     (is (thrown? AssertionError
-                 (new-operation nil good)) "No ops")))
+                 (new-operation nil good)) "No ops")
+
+    (testing "For invalid amounts: more than two decimal places"
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount 99.999))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount -99.999))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount ".99999"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "-.99999"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "1.99999")))))))
 
 ;;;; CURRENT BALANCE TESTS
 (deftest current-balance-test
   (let [operations [(opp 1 "Deposit"             1423.34 "15/10")
                     (opp 1 "Purchase on Amazon" -898.76  "17/10")
-                    (opp 2 "Debit to Mary"      -100.00  "14/10")
-                    (opp 2 "Salary"              8115.40 "12/10")]
+                    (opp 2 "Debit to Mary"      -100     "14/10")
+                    (opp 2 "Salary"              8115.4  "12/10")]
         ops (reduce new-operation {} operations)]
 
     (testing "Current balance of account number 1"
