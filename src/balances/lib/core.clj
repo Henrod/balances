@@ -15,7 +15,7 @@
   Amount is a number or a string of a number that is converted to double with
   two decimal places to represent an amount of money."
   [description amount]
-  {:pre [(instance? String description)]}
+  {:pre [(u/validate-description description) (u/validate-amount amount)]}
   (Operation. description (bigdec amount)))
 
 
@@ -82,7 +82,8 @@
   Start-date and end-date are both strings of dates in the format dd/MM. They
    must be valid dates and end-date must be after start-date.
   Returns a map from :statement to vector ordered by date of maps. These maps
-   have :date, :balance and :operations."
+   have :date, :balance and :operations.
+  The vector is empty if account doesn't exist."
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
    :post [(map? %)]}
@@ -105,7 +106,8 @@
   Ops is the map of operations.
   Account is an identifier different than nil and not empty.
   Returns a map from :debts to a vector of maps. These maps have :start,
-  :principal and, if current-balance is non negative, :end."
+  :principal and, if current-balance is non negative, :end.
+  The vector is empty if account doesn't exist."
   [ops account]
   {:pre [ops (u/validate-account account)]
    :post [(map? %)]}

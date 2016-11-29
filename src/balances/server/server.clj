@@ -37,8 +37,12 @@
           :balance   (current-balance @ops account)
           :statement (bank-statement @ops account start end)
           :debt      (debt-periods @ops account))))
+    (catch IllegalArgumentException e
+      (res/status (-> e .getMessage res/response) 422))
+    (catch AssertionError e
+      (res/status (-> e .getMessage res/response) 422))
     (catch Exception e
-      (res/status (-> e .getMessage res/response) 422))))
+      (res/status (-> e .getMessage res/response) 500))))
 
 (defroutes app-routes
            (POST "/new"       [& params] (handler :new       params))

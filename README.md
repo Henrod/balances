@@ -101,6 +101,7 @@ They are already conjoined in the vector ordered since the operations were alrea
 * Following the exercise, it is not considered the year of the operations, but it's a simple extension that could be done in ns **util**.
 * The user already has a valid account number over which he/she operates.
 * The amount's sign and the description are coherent; for example, if the operation is a credit, the amount is positive, if it is a purchase, the amount is negative. This could be guaranteed by using a new parameter or checking from the description.
+* There aren't problems with TCP retransmission of a transaction from client to server (due to connection failure, for example).
 
 ## Decisions
 
