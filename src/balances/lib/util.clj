@@ -66,17 +66,18 @@
 
 (defn validate-amount
   [amount]
-  (cond
-    (nil? amount)
-      (invalid "Missing parameter: amount")
-    (and (string? amount) (empty? amount))
-      (invalid "Empty parameter: amount")
-    (= 0M (bigdec amount))
-      (invalid "Error: transaction must be different than zero")
-    (let [amount# (str amount)]
-      (not= amount# (->> amount# (re-seq #"\-?\d*\.?\d{0,2}") first)))
-      (invalid "Error: only two decimal places allowed")
-    :else true))
+  (let [msg1 "Missing parameter: amount"
+        msg2 "Empty parameter: amount"
+        msg3 "Error: transaction must be different than zero"
+        msg4 "Error: only two decimal places allowed"
+        amount# (str amount)
+        pat #"\-?\d*\.?\d{0,2}"]
+    (cond
+      (nil? amount) (invalid msg1)
+      (and (string? amount) (empty? amount)) (invalid msg2)
+      (= 0M (bigdec amount)) (invalid msg3)
+      (not= amount# (->> amount# (re-seq pat) first)) (invalid msg4)
+      :else true)))
 
 (defn validate-date
   ([str]

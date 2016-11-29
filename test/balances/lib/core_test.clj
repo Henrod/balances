@@ -1,8 +1,7 @@
 (ns balances.lib.core-test
   (:require [clojure.test :refer [deftest testing is are]]
             [balances.lib.core :refer [new-operation current-balance build
-                                   bank-statement debt-periods
-                                   compute-balances]]
+                                   bank-statement debt-periods]]
             [balances.lib.util :as util]))
 
 (defn- opp
@@ -27,12 +26,12 @@
                 :operations (sorted-map day1 [(build "Salary" 4267.34)]
                                         day2 [(build "Deposit" 500)
                                               (build "Credit" 1000)])}}
-        balances-1 (compute-balances (get-in ops [1 :operations]))
-        balances-2 (compute-balances (get-in ops [2 :operations]))
+        bal-1 (#'balances.lib.core/compute-balances (get-in ops [1 :operations]))
+        bal-2 (#'balances.lib.core/compute-balances (get-in ops [2 :operations]))
         result-1 {day1 -178.52M day2 821.48M}
         result-2 {day1 4267.34M day2 5767.34M}]
-    (is (= balances-1 result-1))
-    (is (= balances-2 result-2))))
+    (is (= bal-1 result-1))
+    (is (= bal-2 result-2))))
 
 
 ;;;; NEW OPERATION TESTS
@@ -41,7 +40,7 @@
         opr-2 (opp 1 "Purchase" -800      "17/10")
         opr-3 (opp 2 "Debit"    "-199.43" "17/11")
         opr-4 (opp 3 "Salary"   8123.3    "10/10")
-        opr-5 (opp 2 "Credit"    "241.39" "17/11")]
+        opr-5 (opp 2 "Credit"   "241.39"  "17/11")]
 
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
@@ -284,6 +283,15 @@
                       (opp 1 "Debit"    -100.01  "15/01")
                       (opp 1 "Salary"    1100.00 "20/01")]
           res {:debts [{:start "12/01" :principal "-100.00" :end "19/01"}]}
+          debts (debt-periods (reduce new-operation {} operations) 1)]
+      (is (= debts res))))
+
+  (testing "Plateau without end"
+    (let [operations [(opp 1 "Debit"    -100.00  "12/01")
+                      (opp 1 "Credit"    200.00  "15/01")
+                      (opp 1 "Purchase" -99.99   "15/01")
+                      (opp 1 "Debit"    -100.01  "15/01")]
+          res {:debts [{:start "12/01" :principal "-100.00"}]}
           debts (debt-periods (reduce new-operation {} operations) 1)]
       (is (= debts res))))
 

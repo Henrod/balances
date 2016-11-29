@@ -67,7 +67,7 @@
 
   (is (u/validate-amount "10"))
   (is (u/validate-amount "10."))
-  (is (u/validate-amount "10.1"))
+  (is (u/validate-amount 10.1))
   (is (u/validate-amount "10.11"))
   (is (u/validate-amount "-10"))
   (is (u/validate-amount "-10."))

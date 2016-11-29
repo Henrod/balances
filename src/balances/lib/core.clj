@@ -20,7 +20,7 @@
 
 
 ;;;; Helper function
-(defn compute-balances
+(defn- compute-balances
   "Compute the balance for each date by adding the total amount of operations
    from the current date with the balance of the previous date.
   Operations is a sorted-map from date to vector of Operations at that date.
