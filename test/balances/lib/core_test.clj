@@ -37,10 +37,11 @@
 
 ;;;; NEW OPERATION TESTS
 (deftest new-operation-test
-  (let [opr-1 (opp 1 "Deposit"   "1000"     "15/10")
-        opr-2 (opp 1 "Purchase" -800     "17/10")
-        opr-3 (opp 2 "Debit"    "-199.43"   "17/11")
-        opr-4 (opp 3 "Salary"    8123.3 "10/10")]
+  (let [opr-1 (opp 1 "Deposit"  "1000"    "15/10")
+        opr-2 (opp 1 "Purchase" -800      "17/10")
+        opr-3 (opp 2 "Debit"    "-199.43" "17/11")
+        opr-4 (opp 3 "Salary"   8123.3    "10/10")
+        opr-5 (opp 2 "Credit"    "241.39" "17/11")]
 
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
@@ -58,14 +59,15 @@
         (is (= ops res))))
 
     (testing "Add multiple accounts"
-      (let [ops (reduce new-operation {} [opr-1 opr-2 opr-3 opr-4])
+      (let [ops (reduce new-operation {} [opr-1 opr-2 opr-3 opr-4 opr-5])
             res {1 {:current 200M
                     :operations (sorted-map
                                   (date "15/10") [(build "Deposit" 1000.00)]
                                   (date "17/10") [(build "Purchase" -800.00)])}
-                 2 {:current -199.43M
+                 2 {:current 41.96M
                     :operations (sorted-map
-                                  (date "17/11") [(build "Debit" -199.43)])}
+                                  (date "17/11") [(build "Debit" -199.43)
+                                                  (build "Credit" 241.39)])}
                  3 {:current 8123.30M
                     :operations (sorted-map
                                   (date "10/10") [(build "Salary" 8123.30)])}}]
@@ -112,7 +114,7 @@
 (deftest current-balance-test
   (let [operations [(opp 1 "Deposit"             1423.34 "15/10")
                     (opp 1 "Purchase on Amazon" -898.76  "17/10")
-                    (opp 2 "Debit to Mary"      -100     "14/10")
+                    (opp 2 "Debit to Mary"      -100.0   "14/10")
                     (opp 2 "Salary"              8115.4  "12/10")]
         ops (reduce new-operation {} operations)]
 
@@ -347,11 +349,11 @@
                     (opp 1 "Withdrawal" -50      "12/04")
                     (opp 1 "Credit"      1000.00 "20/04")
 
-                    (opp 2 "Debit"    -1200.50 "21/04")
-                    (opp 2 "Deposit"   200.50  "16/04")
-                    (opp 2 "Credit"    500     "10/04")
-                    (opp 2 "Purchase" -1000    "01/04")
-                    (opp 2 "Deposit"   "500"   "10/04")
+                    (opp 2 "Debit"    -1200.36  "21/04")
+                    (opp 2 "Deposit"   200.36   "16/04")
+                    (opp 2 "Credit"    500.99   "10/04")
+                    (opp 2 "Purchase" -1000     "01/04")
+                    (opp 2 "Deposit"   "499.01" "10/04")
 
                     (opp 3 "Debit"      -236.50    "6/04")
                     (opp 3 "Salary"      5000.00   "10/04")
@@ -382,12 +384,12 @@
              {"01/04" {:balance "-1000.00"
                        :operations ["Purchase 1000.00"]}
               "10/04" {:balance "0.00"
-                       :operations ["Credit 500.00"
-                                    "Deposit 500.00"]}
-              "16/04" {:balance "200.50"
-                       :operations ["Deposit 200.50"]}
+                       :operations ["Credit 500.99"
+                                    "Deposit 499.01"]}
+              "16/04" {:balance "200.36"
+                       :operations ["Deposit 200.36"]}
               "21/04" {:balance "-1000.00"
-                       :operations ["Debit 1200.50"]}}))
+                       :operations ["Debit 1200.36"]}}))
       (is (= (debt-periods ops 2)
              {:debts [{:start "01/04" :principal "-1000.00" :end "09/04"}
                       {:start "21/04" :principal "-1000.00"}]})))
@@ -415,10 +417,10 @@
                             (date "20/04") [(build "Credit"      1000.00)]}}
             2 {:current -1000M
                :operations {(date "01/04") [(build "Purchase" -1000.00)]
-                            (date "10/04") [(build "Credit"    500.00)
-                                            (build "Deposit"   500.00)]
-                            (date "16/04") [(build "Deposit"   200.50)]
-                            (date "21/04") [(build "Debit"    -1200.50)]}}
+                            (date "10/04") [(build "Credit"    500.99)
+                                            (build "Deposit"   499.01)]
+                            (date "16/04") [(build "Deposit"   200.36)]
+                            (date "21/04") [(build "Debit"    -1200.36)]}}
             3 {:current -236.5M
                :operations {(date "06/04") [(build "Debit"      -236.50)]
                             (date "10/04") [(build "Salary"      5000.00)
