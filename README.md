@@ -98,7 +98,7 @@ They are already conjoined in the vector ordered since the operations were alrea
 ## Hypothesis
 
 * The user that adds new operations is authenticated and using a secure connection (HTTPS).
-* Following the exercise, it is not considered the year of the operations, but it's a simple extension that could be done in ns **util**.
+* Following the exercise, it is not considered the year of the operations, but it's a simple extension that could be done in ns **lib.util**.
 * The user already has a valid account number over which he/she operates.
 * The amount's sign and the description are coherent; for example, if the operation is a credit, the amount is positive, if it is a purchase, the amount is negative. This could be guaranteed by using a new parameter or checking from the description.
 * There aren't problems with TCP retransmission of a transaction from client to server (due to connection failure, for example).
@@ -107,8 +107,8 @@ They are already conjoined in the vector ordered since the operations were alrea
 
 * The account number can be of any type: integer, UUID, string, etc. The tests use integer for the sake of readability.
 * All HTTP requests are POST so they can accept JSON payloads as requests. 
-* Amounts are always BigDecimal. The value showed on JSONs are strings taken two decimal places only.
-* It is used record instead of maps for better performance to access values and to standardize its attributes.
+* Amounts are always BigDecimal in order to maintain accuracy. The value showed on JSONs are strings of numbers with two decimal places only.
+* For Operation, it is used record instead of maps for better performance to access values and to standardize its attributes.
 
 ## Time Complexities
 
