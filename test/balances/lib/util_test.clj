@@ -23,7 +23,7 @@
     (is (= "01/01" (u/date->str (u/next-day "31/12"))))))
 
 (deftest within-test
-  (let [within (u/within? "9/3" "29/03")]
+  (let [within (u/make-within "9/3" "29/03")]
     (is (true? (within (u/str->date "9/03"))))
     (is (true? (within (u/str->date "15/03"))))
     (is (true? (within (u/str->date "29/03"))))

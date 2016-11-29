@@ -208,65 +208,75 @@
   (testing "Bank statement for account 1 from 06/08 to 16/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "06/08" :end "16/09"}))
-          result {"06/08" {"balance" "-999.99"
-                           "operations" ["Debit 999.99"]}
-                  "16/09" {"balance" "178.02"
-                           "operations" ["Deposit from Ann 1200.00"
-                                         "Purchase a burger 21.99"]}}
+          result {"statement" [{"date" "06/08"
+                               "balance" "-999.99"
+                               "operations" ["Debit 999.99"]}
+                              {"date" "16/09"
+                               "balance" "178.02"
+                               "operations" ["Deposit from Ann 1200.00"
+                                             "Purchase a burger 21.99"]}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 1 from 06/08 to 15/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "06/08" :end "15/09"}))
-          result {"06/08" {"balance" "-999.99"
-                           "operations" ["Debit 999.99"]}}
+          result {"statement" [{"date" "06/08"
+                               "balance" "-999.99"
+                               "operations" ["Debit 999.99"]}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 1 from 07/08 to 16/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "07/08" :end "16/09"}))
-          result {"16/09" {"balance" "178.02"
-                           "operations" ["Deposit from Ann 1200.00"
-                                         "Purchase a burger 21.99"]}}
+          result {"statement" [{"date" "16/09"
+                               "balance" "178.02"
+                               "operations" ["Deposit from Ann 1200.00"
+                                             "Purchase a burger 21.99"]}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 1 from 07/08 to 15/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "07/08" :end "15/09"}))
-          result {}
+          result {"statement" []}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 4 from 02/08 to 01/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "02/08" :end "01/09"}))
-          result {"02/08" {"balance" "1250.20"
-                           "operations" ["Deposit 1250.20"]}
-                  "25/08" {"balance" "1750.20"
-                           "operations" ["Credit 500.00"]}
-                  "01/09" {"balance" "1740.20"
-                           "operations" ["Withdrawal 10.00"]}}
+          result {"statement" [{"date" "02/08"
+                               "balance" "1250.20"
+                               "operations" ["Deposit 1250.20"]}
+                              {"date" "25/08"
+                               "balance" "1750.20"
+                               "operations" ["Credit 500.00"]}
+                              {"date" "01/09"
+                               "balance" "1740.20"
+                               "operations" ["Withdrawal 10.00"]}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 4 from 10/08 to 29/08"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "10/08" :end "29/08"}))
-          result {"25/08" {"balance" "1750.20"
-                           "operations" ["Credit 500.00"]}}
+          result {"statement" [{"date" "25/08"
+                               "balance" "1750.20"
+                               "operations" ["Credit 500.00"]}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
   (testing "Bank statement for account 4 from 20/08 to 10/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "20/08" :end "10/09"}))
-          result {"25/08" {"balance" "1750.20"
-                           "operations" ["Credit 500.00"]}
-                  "01/09" {"balance" "1740.20"
-                           "operations" ["Withdrawal 10.00"]}}
+          result {"statement" [{"date" "25/08"
+                               "balance" "1750.20"
+                               "operations" ["Credit 500.00"]}
+                              {"date" "01/09"
+                               "balance" "1740.20"
+                               "operations" ["Withdrawal 10.00"]}]}
           body (json/read-str (:body response))]
       (is (= body result)))))
 

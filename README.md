@@ -65,10 +65,16 @@ This function returns the log of operations of an account between two dates, nam
 
 First, the balance is calculated for each dates at that account.
 Then, the dates are filtered to get those between **start date** and **end date**.
-Finally, at each of these dates a new key-value is associated in the result map: 
+Since the dates are hold in a tree inside **ops** (sorted-map), they are already ordered by date.
+Finally, at each of these dates a new map is conjoined to the vector of :statement.
+This map has the fields:
 
-* key: date as string.
-* value: map with the operations' descriptions and the balance.
+* date: date when operations happened.
+* balance: balance of that date based on all previous history.
+* periods: vector of descriptions of each operation at that date.
+
+Since the application is to print the statement, the order of the operations is important. 
+And since the dates were already sorted from the tree, each conjoin add the element in the vector sorted by date.
 
 ### debt-periods
 A vector is constructed. Each element of the vector is a map. The map contains a **start date**, a **principal** and maybe an **end date**.
@@ -85,6 +91,9 @@ If the balance changes but continues negative, then the last element is updated 
 
 If two periods have the same negative balance and one starts the day the other one ends, this becomes a **plateau**. 
 So, these two periods are merged with only one **start date** and **end date**.
+
+Just as bank-statement, the order to show the periods is important. 
+They are already conjoined in the vector ordered since the operations were already ordered inside the tree (sorted-map).
 
 ## Hypothesis
 
@@ -127,6 +136,8 @@ In the second pass, the amount from operations in a date is added to the balance
 
 Then there is a third pass to filter dates outside **start-date** and **end-date**, which is O(m).
 
+With these results, a vector is constructed by conjoining maps with values of the operations between **start-date** and **end-date**. 
+
 So the time complexity is O(m + n), where n is the number of operations and m is the number of dates where operations happened. Since m < n, then the final complexity is O(n).
 
 Notice that since the dates are already sorted in the sorted-map, it's saved the time to sort them, which would be O(m*lg(m)).
@@ -148,6 +159,15 @@ To run as localhost at port 3000, execute:
 ```shell
 lein run
 ```
+
+To call each function, send an HTTP POST with the following parameters: 
+
+| function        | address    | parameters                         |
+|-----------------|------------|------------------------------------|
+| new-operation   | /new       | account, amount, description, date |
+| current-balance | /balance   | account                            |
+| bank-statement  | /statement | account, start, end                |
+| debt-periods    | /debt      | account                            |
 
 To test all namespaces, execute:
 ```shell

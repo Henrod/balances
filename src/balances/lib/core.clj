@@ -46,7 +46,8 @@
   Amount can be a number or a string of a number and must be different than
    zero. Actually, its absolute value must be greater or equal than 0.01.
   Date is a string representing a date in the format dd/MM. There can only be
-   valid months and valid days for the specific month."
+   valid months and valid days for the specific month.
+  Returns ops updated."
   [ops {:keys [account description amount date]}]
   {:pre [ops (u/validate-description description) (u/validate-account account)
          (u/validate-date date) (u/validate-amount amount)]
@@ -65,7 +66,9 @@
   "Current balance of an account.
   It's the sum of the amounts of all operations since the beginning.
   Ops is the map of operations.
-  Account is an identifier different than nil and not empty."
+  Account is an identifier different than nil and not empty.
+  Returns a map from :balance to the string current balance
+  Returns {:balance nil} if account does not exist."
   [ops account]
   {:pre [ops (u/validate-account account)]
    :post [(map? %)]}
@@ -77,27 +80,32 @@
   Ops is the map of operations.
   Account is an identifier different than nil and not empty.
   Start-date and end-date are both strings of dates in the format dd/MM. They
-   must be valid dates and end-date must be after start-date."
+   must be valid dates and end-date must be after start-date.
+  Returns a map from :statement to vector ordered by date of maps. These maps
+   have :date, :balance and :operations."
   [ops account start-date end-date]
   {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
-   :post [(sorted? %) (map? %)]}
-  (let [within?      (u/within? start-date end-date)
-        operations   (get-in ops [account :operations])
-        dated-ops    (select-keys operations (filter within? (keys operations)))
-        each-balance (compute-balances operations)]
-
-    (reduce
-      (fn [m [k v]] (assoc m (u/date->str k)
-                             {:operations (map str v)
-                              :balance    (u/to-format (each-balance k))}))
-      (sorted-map) dated-ops)))
+   :post [(map? %)]}
+  {:statement
+   (let [within?      (u/make-within start-date end-date)
+         operations   (get-in ops [account :operations])
+         dated-ops    (select-keys operations (filter within? (keys operations)))
+         each-balance (compute-balances operations)]
+     (reduce
+       (fn [a [k v]]
+         (conj a {:date (u/date->str k)
+                  :operations (map str v)
+                  :balance (u/to-format (each-balance k))}))
+       [] dated-ops))})
 
 (defn debt-periods
   "Map with a vector of periods of negative balance of an account.
   Each element of the vector is a map with start date, negative balance and
    end date if the current-balance is non negative.
   Ops is the map of operations.
-  Account is an identifier different than nil and not empty."
+  Account is an identifier different than nil and not empty.
+  Returns a map from :debts to a vector of maps. These maps have :start,
+  :principal and, if current-balance is non negative, :end."
   [ops account]
   {:pre [ops (u/validate-account account)]
    :post [(map? %)]}

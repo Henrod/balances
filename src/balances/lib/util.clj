@@ -27,7 +27,7 @@
   [str]
   (t/plus (str->date str) (t/days 1)))
 
-(defn within?
+(defn make-within
   "Constructs a predicate that returns true if a Date is between start-date
   and end-date"
   [start-date end-date]
@@ -68,15 +68,18 @@
   [amount]
   (let [msg1 "Missing parameter: amount"
         msg2 "Empty parameter: amount"
-        msg3 "Error: transaction must be different than zero"
+        msg3 "Error: only numbers are acceptable in amount"
         msg4 "Error: only two decimal places allowed"
+        msg5 "Error: transaction must be different than zero"
         amount# (str amount)
-        pat #"\-?\d*\.?\d{0,2}"]
+        pat-decimal #"^\-?\d*\.?\d{0,2}$"
+        pat-number #"^\-?\d*\.?\d*$"]
     (cond
       (nil? amount) (invalid msg1)
       (and (string? amount) (empty? amount)) (invalid msg2)
-      (= 0M (bigdec amount)) (invalid msg3)
-      (not= amount# (->> amount# (re-seq pat) first)) (invalid msg4)
+      (not= amount# (->> amount# (re-seq pat-number) first)) (invalid msg3)
+      (not= amount# (->> amount# (re-seq pat-decimal) first)) (invalid msg4)
+      (= 0M (bigdec amount)) (invalid msg5)
       :else true)))
 
 (defn validate-date
