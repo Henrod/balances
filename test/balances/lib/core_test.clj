@@ -277,10 +277,11 @@
 
 
 (deftest debt-periods-same-debt-test
-  (testing "Periods with debt when principal doesn't change"
+  (testing "Consecutive periods with debt when principal doesn't change"
     (let [operations [(opp 1 "Debit"    -100.00  "12/01")
                       (opp 1 "Credit"    200.00  "15/01")
-                      (opp 1 "Purchase" -200.00  "15/01")
+                      (opp 1 "Purchase" -99.99   "15/01")
+                      (opp 1 "Debit"    -100.01  "15/01")
                       (opp 1 "Salary"    1100.00 "20/01")]
           res {:debts [{:start "12/01" :principal "-100.00" :end "19/01"}]}
           debts (debt-periods (reduce new-operation {} operations) 1)]
