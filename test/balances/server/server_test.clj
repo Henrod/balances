@@ -38,7 +38,7 @@
 ;;;; NEW OPERATION TEST
 (deftest one-new-operation-test
   (reset! ops {})
-  (let [result {"1" {:current 100.00
+  (let [result {"1" {:current 100M
                      :operations (sorted-map
                                    (date "15/10") [(build "Credit" 100.00)])}}
         response (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))]
@@ -57,7 +57,7 @@
     "Credit 126.00 at 16/10" (opp 1 "Credit" 126.0 "16/10"))
 
   (testing "final result"
-    (let [result {"1" {:current -23.00
+    (let [result {"1" {:current -23M
                        :operations (sorted-map
                                      (date "15/10") [(build "Credit" 100.00)]
                                      (date "16/10") [(build "Debit" -124.00)
@@ -136,7 +136,7 @@
 ;;;; CURRENT BALANCE TEST
 (deftest current-balance-from-one-credit-operation-test
   (reset! ops {})
-  (let [result (http-resp {:balance 100.00})
+  (let [result (http-resp {:balance "100.00"})
         _ (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
@@ -144,7 +144,7 @@
 
 (deftest current-balance-from-one-debit-operation-test
   (reset! ops {})
-  (let [result (http-resp {:balance -120.00})
+  (let [result (http-resp {:balance "-120.00"})
         _ (app (mock/request :post "/new" (opp 1 "Credit" -120.0 "15/10")))
         response (app (mock/request :post "/balance" {:account 1}))]
     (is (= result response))))
@@ -152,7 +152,7 @@
 
 (deftest current-balance-from-multiple-operations-test
   (reset! ops {})
-  (let [result (http-resp {:balance 1201.00})
+  (let [result (http-resp {:balance "1201.00"})
         operations [(opp 1 "Credit"  100.50  "15/10")  ;  100.50
                     (opp 1 "Debit"  -120.00  "16/10")  ; -19.50
                     (opp 1 "Deposit" 220.50  "17/10")  ;  201.00
@@ -164,14 +164,14 @@
 
 (deftest current-balance-multiple-accounts-test
   (reset! ops {})
-  (let [result1 (http-resp {:balance 1100.50})
-        result2 (http-resp {:balance -319.99})
-        result3 (http-resp {:balance 5000.75})
+  (let [result1 (http-resp {:balance "1100.50"})
+        result2 (http-resp {:balance "-319.99"})
+        result3 (http-resp {:balance "5000.75"})
         result4 (http-resp {:balance nil})
         operations [(opp 1 "Credit"    100.50    "15/10")    ; 1: 100.50
                     (opp 2 "Debit"   "-120.0"    "15/10")    ; 2: -120.0
                     (opp 2 "Purchase" -199.99    "20/10")    ; 2: -319.99
-                    (opp 3 "Salary"    5000.7565 "12/10")    ; 3: 5000.75
+                    (opp 3 "Salary"    5000.75 "12/10")      ; 3: 5000.75
                     (opp 1 "Salary"    1000.0    "18/10")]]  ; 1: 1100.50
     (is (every? #(= 200 (:status %))
                 (for [op operations] (app (mock/request :post "/new" op)))))
@@ -208,9 +208,9 @@
   (testing "Bank statement for account 1 from 06/08 to 16/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "06/08" :end "16/09"}))
-          result {"06/08" {"balance" -999.99
+          result {"06/08" {"balance" "-999.99"
                            "operations" ["Debit 999.99"]}
-                  "16/09" {"balance" 178.01
+                  "16/09" {"balance" "178.02"
                            "operations" ["Deposit from Ann 1200.00"
                                          "Purchase a burger 21.99"]}}
           body (json/read-str (:body response))]
@@ -219,7 +219,7 @@
   (testing "Bank statement for account 1 from 06/08 to 15/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "06/08" :end "15/09"}))
-          result {"06/08" {"balance" -999.99
+          result {"06/08" {"balance" "-999.99"
                            "operations" ["Debit 999.99"]}}
           body (json/read-str (:body response))]
       (is (= body result))))
@@ -227,7 +227,7 @@
   (testing "Bank statement for account 1 from 07/08 to 16/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 1 :start "07/08" :end "16/09"}))
-          result {"16/09" {"balance" 178.01
+          result {"16/09" {"balance" "178.02"
                            "operations" ["Deposit from Ann 1200.00"
                                          "Purchase a burger 21.99"]}}
           body (json/read-str (:body response))]
@@ -243,11 +243,11 @@
   (testing "Bank statement for account 4 from 02/08 to 01/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "02/08" :end "01/09"}))
-          result {"02/08" {"balance" 1250.20
+          result {"02/08" {"balance" "1250.20"
                            "operations" ["Deposit 1250.20"]}
-                  "25/08" {"balance" 1750.20
+                  "25/08" {"balance" "1750.20"
                            "operations" ["Credit 500.00"]}
-                  "01/09" {"balance" 1740.20
+                  "01/09" {"balance" "1740.20"
                            "operations" ["Withdrawal 10.00"]}}
           body (json/read-str (:body response))]
       (is (= body result))))
@@ -255,7 +255,7 @@
   (testing "Bank statement for account 4 from 10/08 to 29/08"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "10/08" :end "29/08"}))
-          result {"25/08" {"balance" 1750.20
+          result {"25/08" {"balance" "1750.20"
                            "operations" ["Credit 500.00"]}}
           body (json/read-str (:body response))]
       (is (= body result))))
@@ -263,9 +263,9 @@
   (testing "Bank statement for account 4 from 20/08 to 10/09"
     (let [response (app (mock/request :post "/statement"
                                       {:account 4 :start "20/08" :end "10/09"}))
-          result {"25/08" {"balance" 1750.20
+          result {"25/08" {"balance" "1750.20"
                            "operations" ["Credit 500.00"]}
-                  "01/09" {"balance" 1740.20
+                  "01/09" {"balance" "1740.20"
                            "operations" ["Withdrawal 10.00"]}}
           body (json/read-str (:body response))]
       (is (= body result)))))
@@ -318,7 +318,7 @@
   (testing "Account number 1"
     (let [response (app (mock/request :post "/debt" {:account 1}))
           result {"debts"
-                  [{"start" "03/01" "end" "09/01" "principal" -24.65}]}
+                  [{"start" "03/01" "end" "09/01" "principal" "-24.66"}]}
           body (json/read-str (:body response))]
       (is (= body result))))
 
@@ -331,9 +331,9 @@
   (testing "Account number 3"
     (let [response (app (mock/request :post "/debt" {:account 3}))
           result {"debts"
-                  [{"start" "05/01" "end" "18/01" "principal" -1520.00}
-                   {"start" "19/01" "end" "21/02" "principal" -1674.00}
-                   {"start" "22/02" "principal" -1814.33}]}
+                  [{"start" "05/01" "end" "18/01" "principal" "-1520.00"}
+                   {"start" "19/01" "end" "21/02" "principal" "-1674.00"}
+                   {"start" "22/02" "principal" "-1814.33"}]}
           body (json/read-str (:body response))]
       (is (= body result)))))
 

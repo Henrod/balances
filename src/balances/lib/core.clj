@@ -7,7 +7,7 @@
 (defrecord Operation [description amount]
   Object
   (toString [this]
-    (str description " " (format "%.2f" (u/abs amount)))))
+    (str description " " (u/to-format (u/abs amount)))))
 
 (defn build
   "Constructs an Operation instance from description and amount.
@@ -16,7 +16,7 @@
   two decimal places to represent an amount of money."
   [description amount]
   {:pre [(instance? String description)]}
-  (Operation. description (u/to-format amount)))
+  (Operation. description (bigdec amount)))
 
 
 ;;;; Helper function
@@ -32,9 +32,8 @@
         (if operations
           (let [compress (fn [a] (apply + (pmap :amount a)))
                 [amount & ams] (pmap compress (vals operations))
-                sum-ams (fn [ve v] (conj ve (u/to-format (+ v (last ve)))))
-                amount# (u/to-format amount)]
-            (zipmap (keys operations) (reduce sum-ams [amount#] ams)))
+                sum-ams (fn [ve v] (conj ve (+ v (last ve))))]
+            (zipmap (keys operations) (reduce sum-ams [amount] ams)))
           {})))
 
 
@@ -52,7 +51,7 @@
   {:pre [ops (u/validate-description description) (u/validate-account account)
          (u/validate-date date) (u/validate-amount amount)]
    :post [(map? %)]}
-  (let [date# (u/str->date date) amount# (u/to-format amount)]
+  (let [date# (u/str->date date) amount# (bigdec amount)]
     (if (contains? ops account)
       (-> (update-in ops [account :current] #(+ % amount#))
           (update-in [account :operations date#]
@@ -88,8 +87,9 @@
         each-balance (compute-balances operations)]
 
     (reduce
-      (fn [m [k v]] (assoc m (u/date->str k) {:operations (map str v)
-                                              :balance (each-balance k)}))
+      (fn [m [k v]] (assoc m (u/date->str k)
+                             {:operations (map str v)
+                              :balance    (u/to-format (each-balance k))}))
       (sorted-map) dated-ops)))
 
 (defn debt-periods
@@ -110,7 +110,7 @@
                           :principal (u/to-format curr-bal)}
                      massoc #(if next-date (assoc % :end (u/previous-day next-date))
                                            (dissoc % :end))
-                     plateau? (and (= (:principal l) curr-bal)
+                     plateau? (and (u/equal-decs curr-bal (:principal l))
                                    (= (:end l) (u/previous-day curr-date)))]
                  (cond
                    plateau?        (conj (pop a) (massoc l))

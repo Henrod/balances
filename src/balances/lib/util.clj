@@ -46,11 +46,17 @@
              "Only numbers can have an absolute value"))))
 
 (defn to-format
-  "Converts a number or the string of a number to double with two decimal
+  "Converts a number or the string of a number to number with two decimal
   places"
   [number]
-  (-> (if (string? number) (read-string number) (double number))
-      bigdec (* 100) long (/ 100) double))
+  (format "%.2f" number))
+
+(defn equal-decs
+  "Compares big decimal to string"
+  [a b]
+  {:pre [(decimal? a) (or (nil? b) (string? b))]}
+  (if b
+    (= (to-format a) b)))
 
 
 ;; Validation
@@ -64,7 +70,7 @@
     (nil? amount) (invalid "Missing parameter: amount")
     (and (string? amount) (empty? amount)) (invalid "Empty parameter: amount")
     :else (let [msg "Error: transaction must be different than zero"]
-            (if (= 0.0 (to-format amount)) (invalid msg) true))))
+            (if (= 0M (bigdec amount)) (invalid msg) true))))
 
 (defn validate-date
   ([str]

@@ -52,14 +52,7 @@
     (is (thrown? Exception (util/abs "3")))))
 
 (deftest to-float-test
-  (testing "for integer"
-    (is (= 1.00 (util/to-format 1)))
-    (is (= -1.00 (util/to-format -1))))
-
-  (testing "for float"
-    (is (= 100.15 (util/to-format 100.1515151)))
-    (is (= -100.15 (util/to-format -100.15131341))))
-
-  (testing "for strings"
-    (is (= 100.50 (util/to-format "100.50292929")))
-    (is (= -100.50 (util/to-format "-100.50278723")))))
+  (is (= "1.00" (util/to-format 1M)))
+  (is (= "-1.00" (util/to-format -1M)))
+  (is (= "-1.99" (util/to-format -1.99M)))
+  (is (= "-1.01" (util/to-format -1.0099999M))))
