@@ -4,43 +4,43 @@ A Clojure library designed to simulate bank operations.
 
 ## Solution
 
-The main variable is commonly called **ops**. It's a map where each key is an account number and the value is map.
+The main variable is commonly called **ops**. It's a map where each key is an account number and the value is another map.
 This map has two keys, :current which saves the current balance of this account number, and :operations which holds another map.
 Now, this map is a sorted-map (balanced tree) where each key is the date when operations occurred; the value of each key is a vector of Operation. The map is sorted by date.
 Operation is a record with two attributes: description and amount.
 Example of **ops** (in the example below the dates are strings for the sake of clarity; instead, they are actual instances of org.joda.time.DateTime):
 
 ```
-{1 {:current 771.43,
+{1 {:current 771.43M,
        :operations {"15/10" [#balances.core.Operation
-                                                 {:amount 1000.0,
+                                                 {:amount 1000M,
                                                    :description "Deposit"}],
                               "16/10" [#balances.core.Operation
-                                                 {:amount -45.23,
+                                                 {:amount -45.23M,
                                                    :description "Purchase on Uber"}
                                               #balances.core.Operation
-                                                 {:amount -3.34,
+                                                 {:amount -3.34M,
                                                    :description "Purchase on Amazon"}],
                               "17/10" [#balances.core.Operation
-                                                 {:amount -180.0,
+                                                 {:amount -180M,
                                                    :description "Withdrawal"}]}},
- 2 {:current 71.43,
+ 2 {:current 71.43M,
       :operations {"17/10" [#balances.core.Operation
-                                                {:amount 771.43,
+                                                {:amount 771.43M,
                                                   :description "Credit"}],
                               "18/10" [#balances.core.Operation
-                                                 {:amount -800.0,
+                                                 {:amount -800M,
                                                    :description "Purchase of flight ticket"}],
                               "25/10" [#balances.core.Operation
-                                                {:amount 100.0,
+                                                {:amount 100M,
                                                   :description "Deposit"}]}}}
 ```
 
 The following parameters describe each operation. 
 
 1. account: unique identifier for an account; can be any number or string. 
-2. description: A short string describing the operation.
-3. amount: if the operation is credit, the amount must be positive; if it is debit, the amount must be negative; it's supposed that the sign is coherent with the description. Amounts equal to zero or different than numbers are not allowed.
+2. description: a short string describing the operation.
+3. amount: it is only allowed numbers different than zero and with zero, one or two decimal places. For example, it's not possible to send 10.123 as amount.
 4. date: the date when the operation occurred, in the format dd/MM.
 
 The solution has three layers, each one in its namespace:
@@ -83,6 +83,9 @@ If the balance becomes positive in a following date, the last element of the vec
 
 If the balance changes but continues negative, then the last element is updated with an **end date** and a new element is added with a **start date** and a **principal**.
 
+If two periods have the same negative balance and one starts the day the other one ends, this becomes a **plateau**. 
+So, these two periods are merged with only one **start date** and **end date**.
+
 ## Hypothesis
 
 * The user that adds new operations is authenticated and using a secure connection (HTTPS).
@@ -94,7 +97,7 @@ If the balance changes but continues negative, then the last element is updated 
 
 * The account number can be of any type: integer, UUID, string, etc. The tests use integer for the sake of readability.
 * All HTTP requests are POST so they can accept JSON payloads as requests. 
-* It is used double for the amounts instead of float for more precise truncations.
+* Amounts are always BigDecimal. The value showed on JSONs are strings taken two decimal places only.
 * It is used record instead of maps for better performance to access values and to standardize its attributes.
 
 ## Time Complexities

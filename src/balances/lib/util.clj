@@ -73,7 +73,8 @@
       (invalid "Empty parameter: amount")
     (= 0M (bigdec amount))
       (invalid "Error: transaction must be different than zero")
-    (not= (str amount) (->> amount str (re-seq #"\-?\d*\.?\d{0,2}") first))
+    (let [amount# (str amount)]
+      (not= amount# (->> amount# (re-seq #"\-?\d*\.?\d{0,2}") first)))
       (invalid "Error: only two decimal places allowed")
     :else true))
 
