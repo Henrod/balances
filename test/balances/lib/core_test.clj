@@ -1,7 +1,7 @@
 (ns balances.lib.core-test
   (:require [clojure.test :refer [deftest testing is are]]
             [balances.lib.core :refer [new-operation current-balance build
-                                   bank-statement debt-periods]]
+                                   bank-statement debt-periods build-ac]]
             [balances.lib.util :as util]))
 
 (defn- opp
@@ -18,14 +18,12 @@
 (deftest compute-balances-test
   (let [day1 (date "06/12")
         day2 (date "07/12")
-        ops {1 {:current 821.48M
-                :operations (sorted-map day1 [(build "Debit" -146.32)
-                                              (build "Purchase" -32.20)]
-                                        day2 [(build "Credit" 1000.00)])}
-             2 {:current 5767.34M
-                :operations (sorted-map day1 [(build "Salary" 4267.34)]
-                                        day2 [(build "Deposit" 500)
-                                              (build "Credit" 1000)])}}
+        ops {1 (build-ac 821.48M (sorted-map day1 [(build "Debit" -146.32)
+                                                   (build "Purchase" -32.20)]
+                                             day2 [(build "Credit" 1000.00)]))
+             2 (build-ac 5767.34M (sorted-map day1 [(build "Salary" 4267.34)]
+                                              day2 [(build "Deposit" 500)
+                                                    (build "Credit" 1000)]))}
         bal-1 (#'balances.lib.core/compute-balances (get-in ops [1 :operations]))
         bal-2 (#'balances.lib.core/compute-balances (get-in ops [2 :operations]))
         result-1 {day1 -178.52M day2 821.48M}
@@ -44,32 +42,27 @@
 
     (testing "Initial case"
       (let [ops (new-operation {} opr-1)
-            res {1 {:current    1000M
-                    :operations (sorted-map
-                                  (date "15/10") [(build "Deposit" 1000.00)])}}]
+            res {1 (build-ac 1000M (sorted-map
+                                     (date "15/10") [(build "Deposit" 1000.00)]))}]
         (is (= ops res))))
 
     (testing "Add new operation"
       (let [ops (-> (new-operation {} opr-1) (new-operation opr-2))
-            res {1 {:current    200M
-                    :operations (sorted-map
-                                  (date "15/10") [(build "Deposit" 1000.00)]
-                                  (date "17/10") [(build "Purchase" -800.00)])}}]
+            res {1 (build-ac 200M (sorted-map
+                                    (date "15/10") [(build "Deposit" 1000.00)]
+                                    (date "17/10") [(build "Purchase" -800.00)]))}]
         (is (= ops res))))
 
     (testing "Add multiple accounts"
       (let [ops (reduce new-operation {} [opr-1 opr-2 opr-3 opr-4 opr-5])
-            res {1 {:current 200M
-                    :operations (sorted-map
-                                  (date "15/10") [(build "Deposit" 1000.00)]
-                                  (date "17/10") [(build "Purchase" -800.00)])}
-                 2 {:current 41.96M
-                    :operations (sorted-map
-                                  (date "17/11") [(build "Debit" -199.43)
-                                                  (build "Credit" 241.39)])}
-                 3 {:current 8123.30M
-                    :operations (sorted-map
-                                  (date "10/10") [(build "Salary" 8123.30)])}}]
+            res {1 (build-ac 200M (sorted-map
+                                    (date "15/10") [(build "Deposit" 1000.00)]
+                                    (date "17/10") [(build "Purchase" -800.00)]))
+                 2 (build-ac 41.96M (sorted-map
+                                      (date "17/11") [(build "Debit" -199.43)
+                                                      (build "Credit" 241.39)]))
+                 3 (build-ac 8123.30M (sorted-map
+                                        (date "10/10") [(build "Salary" 8123.30)]))}]
         (is (= ops res))))))
 
 
@@ -465,24 +458,21 @@
              {:debts [{:start "06/04" :principal "-236.50"}]})))
 
     (is (= ops
-           {1 {:current 550M
-               :operations (sorted-map
-                             (date "10/04") [(build "Credit"      100.0)]
-                             (date "12/04") [(build "Purchase"   -200.00)
-                                             (build "Purchase"   -300.00)
-                                             (build "Withdrawal" -50.00)]
-                             (date "20/04") [(build "Credit"      1000.00)])}
-            2 {:current -1000M
-               :operations (sorted-map
-                             (date "01/04") [(build "Purchase" -1000.00)]
-                             (date "10/04") [(build "Credit"    500.99)
-                                             (build "Deposit"   499.01)]
-                             (date "16/04") [(build "Deposit"   200.36)]
-                             (date "21/04") [(build "Debit"    -1200.36)])}
-            3 {:current -236.5M
-               :operations (sorted-map
-                             (date "06/04") [(build "Debit"      -236.50)]
-                             (date "10/04") [(build "Salary"      5000.00)
-                                             (build "Purchase"   -3500.00)
-                                             (build "Debit"      -1200.00)
-                                             (build "Withdrawal" -300.00)])}}))))
+           {1 (build-ac 550M (sorted-map
+                               (date "10/04") [(build "Credit"      100.0)]
+                               (date "12/04") [(build "Purchase"   -200.00)
+                                               (build "Purchase"   -300.00)
+                                               (build "Withdrawal" -50.00)]
+                               (date "20/04") [(build "Credit"      1000.00)]))
+            2 (build-ac -1000M (sorted-map
+                                 (date "01/04") [(build "Purchase" -1000.00)]
+                                 (date "10/04") [(build "Credit"    500.99)
+                                                 (build "Deposit"   499.01)]
+                                 (date "16/04") [(build "Deposit"   200.36)]
+                                 (date "21/04") [(build "Debit"    -1200.36)]))
+            3 (build-ac -236.5M (sorted-map
+                                  (date "06/04") [(build "Debit"      -236.50)]
+                                  (date "10/04") [(build "Salary"      5000.00)
+                                                  (build "Purchase"   -3500.00)
+                                                  (build "Debit"      -1200.00)
+                                                  (build "Withdrawal" -300.00)]))}))))

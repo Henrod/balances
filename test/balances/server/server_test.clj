@@ -1,7 +1,7 @@
 (ns balances.server.server-test
   (:require [clojure.test :refer [is deftest testing are]]
             [balances.server.server :refer [ops app]]
-            [balances.lib.core :refer [build]]
+            [balances.lib.core :refer [build build-ac]]
             [ring.mock.request :as mock]
             [clojure.data.json :as json]
             [balances.lib.util :as util]))
@@ -38,9 +38,8 @@
 ;;;; NEW OPERATION TEST
 (deftest one-new-operation-test
   (reset! ops {})
-  (let [result {"1" {:current 100M
-                     :operations (sorted-map
-                                   (date "15/10") [(build "Credit" 100.00)])}}
+  (let [result {"1" (build-ac 100M (sorted-map
+                                     (date "15/10") [(build "Credit" 100.00)]))}
         response (->> (opp 1 "Credit" 100.0 "15/10")
                       (mock/request :post "/new" ) app :body json/read-str)]
     (is (= result @ops))
@@ -56,12 +55,11 @@
     {"operation" "Debit 125.00 at 16/10"}  (opp 1 "Debit" -125.0 "16/10")
     {"operation" "Credit 126.00 at 16/10"} (opp 1 "Credit" 126.0 "16/10"))
   (testing "final result"
-    (let [result {"1" {:current -23M
-                       :operations (sorted-map
-                                     (date "15/10") [(build "Credit" 100.00)]
-                                     (date "16/10") [(build "Debit" -124.00)
-                                                     (build "Debit" -125.00)
-                                                     (build "Credit" 126.00)])}}]
+    (let [result {"1" (build-ac -23M (sorted-map
+                                       (date "15/10") [(build "Credit" 100.00)]
+                                       (date "16/10") [(build "Debit" -124.00)
+                                                       (build "Debit" -125.00)
+                                                       (build "Credit" 126.00)]))}]
       (is (= result @ops)))))
 
 
@@ -139,12 +137,10 @@
   (testing "this test show that invalid parameters don't invalidate nor reset
   the previous state variable"
     (reset! ops {})
-    (let [result {"1" {:current 100M
-                       :operations (sorted-map
-                                     (date "15/10") [(build "Credit" 100.00)])}
-                  "2" {:current 2000M
-                       :operations (sorted-map
-                                     (date "11/10") [(build "Credit" 2000)])}}]
+    (let [result {"1" (build-ac 100M (sorted-map
+                                       (date "15/10") [(build "Credit" 100.00)]))
+                  "2" (build-ac 2000M (sorted-map
+                                        (date "11/10") [(build "Credit" 2000)]))}]
       (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10"))) ; valid
       (app (mock/request :post "/new" (opp 1 "" 100.0 "15/10"))) ; invalid
       (app (mock/request :post "/new" (opp 2 "Credit" 2000 "11/10"))) ; valid

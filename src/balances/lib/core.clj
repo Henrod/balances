@@ -4,7 +4,7 @@
   (:require [balances.lib.util :as u]))
 
 ;;;; Record definition
-(defrecord Operation [description amount]
+(defrecord ^:private Operation [description amount]
   Object
   (toString [_]
     (str description " " (u/to-format (u/abs amount)))))
@@ -17,6 +17,16 @@
   [description amount]
   {:pre [(u/validate-description description) (u/validate-amount amount)]}
   (Operation. description (bigdec amount)))
+
+(defrecord ^:private Account [current operations])
+
+(defn build-ac
+  "Constructs an Account instance from current balance and operations.
+  Current is the current balance of this an account. It is a BigDecimal.
+  Operations is a sorted-map from date to vector of Operations."
+  [current operations]
+  {:pre [(map? operations) (sorted? operations) (decimal? current)]}
+  (Account. current operations))
 
 
 ;;;; Helper function
@@ -59,8 +69,7 @@
                      (comp vec conj) (build description amount)))
       (assoc ops
         account
-        {:current amount#
-         :operations (sorted-map date# [(build description amount#)])}))))
+        (Account. amount# (sorted-map date# [(build description amount#)]))))))
 
 (defn current-balance
   "Current balance of an account.
