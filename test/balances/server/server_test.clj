@@ -41,21 +41,20 @@
   (let [result {"1" {:current 100M
                      :operations (sorted-map
                                    (date "15/10") [(build "Credit" 100.00)])}}
-        response (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10")))]
+        response (->> (opp 1 "Credit" 100.0 "15/10")
+                      (mock/request :post "/new" ) app :body json/read-str)]
     (is (= result @ops))
-    (is (= response {:status 200, :headers {},
-                     :body "Credit 100.00 at 15/10"}))))
+    (is (= response {"operation" "Credit 100.00 at 15/10"}))))
 
 
 (deftest four-new-operations-test
   (reset! ops {})
   (are [body op]
-    (= {:status 200 :headers {} :body body} (app (mock/request :post "/new" op)))
-    "Credit 100.00 at 15/10" (opp 1 "Credit" 100.0 "15/10")
-    "Debit 124.00 at 16/10"  (opp 1 "Debit" -124.0 "16/10")
-    "Debit 125.00 at 16/10"  (opp 1 "Debit" -125.0 "16/10")
-    "Credit 126.00 at 16/10" (opp 1 "Credit" 126.0 "16/10"))
-
+    (= body (-> (mock/request :post "/new" op) app :body json/read-str))
+    {"operation" "Credit 100.00 at 15/10"} (opp 1 "Credit" 100.0 "15/10")
+    {"operation" "Debit 124.00 at 16/10"}  (opp 1 "Debit" -124.0 "16/10")
+    {"operation" "Debit 125.00 at 16/10"}  (opp 1 "Debit" -125.0 "16/10")
+    {"operation" "Credit 126.00 at 16/10"} (opp 1 "Credit" 126.0 "16/10"))
   (testing "final result"
     (let [result {"1" {:current -23M
                        :operations (sorted-map
@@ -69,28 +68,28 @@
 (deftest new-operation-missing-parameters-test
   (let [m (opp 1 "Credit" 100.0 "15/10")]
     (testing "Missing account parameter"
-      (let [result {:status 422, :body "Missing parameter: account", :headers {}}
+      (let [result {:status 400, :body "Missing parameter: account", :headers {}}
             response (app (mock/request :post "/new" (dissoc m :account)))]
         (is (= result response))))
 
     (testing "Missing description parameter"
-      (let [result {:status 422, :body "Missing parameter: description", :headers {}}
+      (let [result {:status 400, :body "Missing parameter: description", :headers {}}
             response (app (mock/request :post "/new" (dissoc m :description)))]
         (is (= result response))))
 
     (testing "Missing date parameter"
-      (let [result {:status 422, :body "Missing parameter: date", :headers {}}
+      (let [result {:status 400, :body "Missing parameter: date", :headers {}}
             response (app (mock/request :post "/new" (dissoc m :date)))]
         (is (= result response))))
 
     (testing "Missing amount parameter"
-      (let [result {:status 422, :body "Missing parameter: amount", :headers {}}
+      (let [result {:status 400, :body "Missing parameter: amount", :headers {}}
             response (app (mock/request :post "/new" (dissoc m :amount)))]
         (is (= result response))))
 
     (testing "Missing two parameters"
-      (let [result1 {:status 422, :body "Missing parameter: amount", :headers {}}
-            result2 {:status 422, :body "Missing parameter: date", :headers {}}
+      (let [result1 {:status 400, :body "Missing parameter: amount", :headers {}}
+            result2 {:status 400, :body "Missing parameter: date", :headers {}}
             response (app (mock/request :post "/new" (dissoc m :amount :date)))]
         (is (or (= result1 response) (= result2 response)))))))
 
@@ -98,28 +97,27 @@
   (reset! ops {})
   (let [m (opp 1 "Credit" 100.0 "15/10")]
     (testing "empty account"
-      (let [result {:status 422, :body "Empty parameter: account", :headers {}}
+      (let [result {:status 400, :body "Empty parameter: account", :headers {}}
             response (app (mock/request :post "/new" (assoc m :account "")))]
         (is (= result response))))
 
     (testing "empty description"
-      (let [result {:status 422, :body "Empty parameter: description", :headers {}}
+      (let [result {:status 400, :body "Empty parameter: description", :headers {}}
             response (app (mock/request :post "/new" (assoc m :description "")))]
         (is (= result response))))
 
     (testing "empty amount"
-      (let [result {:status 422, :body "Empty parameter: amount", :headers {}}
+      (let [result {:status 400, :body "Empty parameter: amount", :headers {}}
             response (app (mock/request :post "/new" (assoc m :amount "")))]
         (is (= result response))))
 
     (testing "empty date"
-      (let [result {:status 422, :body "Empty parameter: date", :headers {}}
+      (let [result {:status 400, :body "Empty parameter: date", :headers {}}
             response (app (mock/request :post "/new" (assoc m :date "")))]
         (is (= result response))))))
 
 (deftest new-operation-invalid-dates-test
-  (are [op] (= 422 (:status (app (mock/request :post "/new" op))))
-            (opp 1 "Credit" 100.0 "15/13")
+  (are [op] (= 400 (:status (app (mock/request :post "/new" op))))
             (opp 1 "Credit" 100.0 "15/13")
             (opp 1 "Credit" 100.0 "30/02")
             (opp 1 "Credit" 100.0 "31/11")
@@ -129,9 +127,28 @@
 
 (deftest invalid-amount-test
   (testing "A word passed as amount"
-    (are [op] (= 422 (:status (app (mock/request :post "/new" op))))
+    (are [op] (= 400 (:status (app (mock/request :post "/new" op))))
               (opp 1 "Credit" "Cheese" "15/13")
-              (opp 1 "Credit" "" "15/13"))))
+              (opp 1 "Credit" "" "15/13")
+              (opp 1 "Credit" "." "15/13")
+              (opp 1 "Credit" "-" "15/13")
+              (opp 1 "Credit" "10.ab" "15/13")
+              (opp 1 "Credit" "ab.10" "15/13"))))
+
+(deftest valid-parameters-then-invalid
+  (testing "this test show that invalid parameters don't invalidate nor reset
+  the previous state variable"
+    (reset! ops {})
+    (let [result {"1" {:current 100M
+                       :operations (sorted-map
+                                     (date "15/10") [(build "Credit" 100.00)])}
+                  "2" {:current 2000M
+                       :operations (sorted-map
+                                     (date "11/10") [(build "Credit" 2000)])}}]
+      (app (mock/request :post "/new" (opp 1 "Credit" 100.0 "15/10"))) ; valid
+      (app (mock/request :post "/new" (opp 1 "" 100.0 "15/10"))) ; invalid
+      (app (mock/request :post "/new" (opp 2 "Credit" 2000 "11/10"))) ; valid
+      (is (= result @ops)))))
 
 ;;;; CURRENT BALANCE TEST
 (deftest current-balance-from-one-credit-operation-test
@@ -185,7 +202,7 @@
 (deftest current-balance-missing-parameters-test
   (reset! ops {})
   (app (mock/request :post "/new" (opp 1 "Salary" 1000.0 "18/10")))
-  (let [result {:status 422 :headers {} :body "Missing parameter: account"}
+  (let [result {:status 400 :headers {} :body "Missing parameter: account"}
         response (app (mock/request :post "/balance" {}))]
     (is (= result response))))
 
@@ -284,26 +301,26 @@
 (deftest bank-statement-missing-parameters-test
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/statement" {:start "10/10" :end "24/12"}))
-           {:status 422 :headers {} :body "Missing parameter: account"})))
+           {:status 400 :headers {} :body "Missing parameter: account"})))
 
   (testing "Missing parameter start"
     (is (= (app (mock/request :post "/statement" {:account 1 :end "24/12"}))
-           {:status 422 :headers {} :body "Missing parameter: start"})))
+           {:status 400 :headers {} :body "Missing parameter: start"})))
 
   (testing "Missing parameter end"
     (is (= (app (mock/request :post "/statement" {:start "10/10" :account 1}))
-           {:status 422 :headers {} :body "Missing parameter: end"})))
+           {:status 400 :headers {} :body "Missing parameter: end"})))
 
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/statement" {}))
-           {:status 422 :headers {} :body "Missing parameter: account"}))))
+           {:status 400 :headers {} :body "Missing parameter: account"}))))
 
 (deftest bank-statement-invalid-dates-test
   (testing "End date before Start date"
     (is (= (app (mock/request :post "/statement" {:start "20/10"
                                                   :end "10/10"
                                                   :account 1}))
-           {:status 422
+           {:status 400
             :headers {}
             :body "Error: End date must be after Start date"}))))
 
@@ -350,4 +367,7 @@
 (deftest debt-periods-missing-parameters-test
   (testing "Missing parameter account"
     (is (= (app (mock/request :post "/debt" {}))
-           {:status 422 :headers {} :body "Missing parameter: account"}))))
+           {:status 400 :headers {} :body "Missing parameter: account"})))
+  (testing "Empty parameter account"
+    (is (= (app (mock/request :post "/debt" {:account ""}))
+           {:status 400 :headers {} :body "Empty parameter: account"}))))

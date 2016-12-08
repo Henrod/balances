@@ -73,12 +73,12 @@
         msg5 "Error: transaction must be different than zero"
         amount# (str amount)
         pat-decimal #"^\-?\d*\.?\d{0,2}$"
-        pat-number #"^\-?\d*\.?\d*$"]
+        pat-number #"^\-?\d+\.?\d*|\-?\d*\.?\d+$"]
     (cond
       (nil? amount) (invalid msg1)
       (and (string? amount) (empty? amount)) (invalid msg2)
-      (not= amount# (->> amount# (re-seq pat-number) first)) (invalid msg3)
-      (not= amount# (->> amount# (re-seq pat-decimal) first)) (invalid msg4)
+      (not= amount# (re-find pat-number amount#)) (invalid msg3)
+      (not= amount# (re-find pat-decimal amount#)) (invalid msg4)
       (= 0M (bigdec amount)) (invalid msg5)
       :else true)))
 
@@ -92,6 +92,8 @@
    (cond
      (nil? str-start) (invalid "Missing parameter: start")
      (nil? str-end)   (invalid "Missing parameter: end")
+     (empty? str-start) (invalid "Empty parameter: start")
+     (empty? str-end)   (invalid "Empty parameter: end")
      (t/after? (str->date str-start) (str->date str-end))
       (invalid "Error: End date must be after Start date")
      :else true)))

@@ -107,7 +107,25 @@
       (is (thrown? IllegalArgumentException
                    (new-operation {} (assoc good :amount "-.99999"))))
       (is (thrown? IllegalArgumentException
-                   (new-operation {} (assoc good :amount "1.99999")))))))
+                   (new-operation {} (assoc good :amount "1.99999")))))
+
+    (testing "For invalid amounts: letters between"
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "abc"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "10.ab"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "ab.10")))))
+
+    (testing "For invalid amounts: sumbols"
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "."))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "-"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "?"))))
+      (is (thrown? IllegalArgumentException
+                   (new-operation {} (assoc good :amount "!")))))))
 
 ;;;; CURRENT BALANCE TESTS
 (deftest current-balance-test
@@ -289,7 +307,7 @@
         (is (= debts res))))
 
     (testing "Period of debt without end"
-      (let [debts (-> (reduce new-operation {} (drop-last operations))
+      (let [debts (-> (reduce new-operation {} (butlast operations))
                       (debt-periods 1))
             res {:debts [{:start "19/10" :principal "-1200.00"}]}]
         (is (= debts res))))))
@@ -448,20 +466,23 @@
 
     (is (= ops
            {1 {:current 550M
-               :operations {(date "10/04") [(build "Credit"      100.0)]
-                            (date "12/04") [(build "Purchase"   -200.00)
-                                            (build "Purchase"   -300.00)
-                                            (build "Withdrawal" -50.00)]
-                            (date "20/04") [(build "Credit"      1000.00)]}}
+               :operations (sorted-map
+                             (date "10/04") [(build "Credit"      100.0)]
+                             (date "12/04") [(build "Purchase"   -200.00)
+                                             (build "Purchase"   -300.00)
+                                             (build "Withdrawal" -50.00)]
+                             (date "20/04") [(build "Credit"      1000.00)])}
             2 {:current -1000M
-               :operations {(date "01/04") [(build "Purchase" -1000.00)]
-                            (date "10/04") [(build "Credit"    500.99)
-                                            (build "Deposit"   499.01)]
-                            (date "16/04") [(build "Deposit"   200.36)]
-                            (date "21/04") [(build "Debit"    -1200.36)]}}
+               :operations (sorted-map
+                             (date "01/04") [(build "Purchase" -1000.00)]
+                             (date "10/04") [(build "Credit"    500.99)
+                                             (build "Deposit"   499.01)]
+                             (date "16/04") [(build "Deposit"   200.36)]
+                             (date "21/04") [(build "Debit"    -1200.36)])}
             3 {:current -236.5M
-               :operations {(date "06/04") [(build "Debit"      -236.50)]
-                            (date "10/04") [(build "Salary"      5000.00)
-                                            (build "Purchase"   -3500.00)
-                                            (build "Debit"      -1200.00)
-                                            (build "Withdrawal" -300.00)]}}}))))
+               :operations (sorted-map
+                             (date "06/04") [(build "Debit"      -236.50)]
+                             (date "10/04") [(build "Salary"      5000.00)
+                                             (build "Purchase"   -3500.00)
+                                             (build "Debit"      -1200.00)
+                                             (build "Withdrawal" -300.00)])}}))))

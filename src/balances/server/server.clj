@@ -25,7 +25,7 @@
   (let [{:keys [account date]} params
         date# (balances.lib.util/str->date date)
         op (last (get-in @ops [account :operations date#]))]
-    (str op " at " date)))
+    {:operation (str op " at " date)}))
 
 (defn- handler
   [func params]
@@ -38,10 +38,10 @@
           :statement (bank-statement @ops account start end)
           :debt      (debt-periods @ops account))))
     (catch IllegalArgumentException e
-      (res/status (-> e .getMessage res/response) 422))
+      (res/status (-> e .getMessage res/response) 400))
     (catch AssertionError e
-      (res/status (-> e .getMessage res/response) 422))
-    (catch Exception e
+      (res/status (-> e .getMessage res/response) 400))
+    (catch Throwable e
       (res/status (-> e .getMessage res/response) 500))))
 
 (defroutes app-routes

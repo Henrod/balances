@@ -6,7 +6,7 @@
 ;;;; Record definition
 (defrecord Operation [description amount]
   Object
-  (toString [this]
+  (toString [_]
     (str description " " (u/to-format (u/abs amount)))))
 
 (defn build
@@ -94,9 +94,9 @@
          each-balance (compute-balances operations)]
      (reduce
        (fn [a [k v]]
-         (conj a {:date (u/date->str k)
+         (conj a {:date       (u/date->str k)
                   :operations (map str v)
-                  :balance (u/to-format (each-balance k))}))
+                  :balance    (u/to-format (each-balance k))}))
        [] dated-ops))})
 
 (defn debt-periods
@@ -112,18 +112,19 @@
   {:pre [ops (u/validate-account account)]
    :post [(map? %)]}
   {:debts
-   (let [operations (get-in ops [account :operations])
-         every-2 (partition 2 1 (repeat nil) (compute-balances operations))
-         sel (fn [a [[curr-date curr-bal] [next-date _]]]
-               (let [l (last a)
-                     elm {:start     (u/date->str curr-date)
-                          :principal (u/to-format curr-bal)}
-                     massoc #(if next-date (assoc % :end (u/previous-day next-date))
-                                           (dissoc % :end))
-                     plateau? (and (u/equal-decs curr-bal (:principal l))
-                                   (= (:end l) (u/previous-day curr-date)))]
-                 (cond
-                   plateau?        (conj (pop a) (massoc l))
-                   (neg? curr-bal) (conj a (massoc elm))
-                   :else a)))]
+   (let
+     [operations (get-in ops [account :operations])
+      every-2 (partition 2 1 (repeat nil) (compute-balances operations))
+      sel (fn [a [[curr-date curr-bal] [next-date _]]]
+            (let [l (last a)
+                  elm {:start     (u/date->str curr-date)
+                       :principal (u/to-format curr-bal)}
+                  massoc #(if next-date (assoc % :end (u/previous-day next-date))
+                                        (dissoc % :end))
+                  plateau? (and (u/equal-decs curr-bal (:principal l))
+                                (= (:end l) (u/previous-day curr-date)))]
+              (cond
+                plateau?        (conj (pop a) (massoc l))
+                (neg? curr-bal) (conj a (massoc elm))
+                :else a)))]
      (reduce sel [] every-2))})
