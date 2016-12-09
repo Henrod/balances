@@ -41,7 +41,7 @@
   (let [result {"1" (build-ac 100M (sorted-map
                                      (date "15/10") [(build "Credit" 100.00)]))}
         response (->> (opp 1 "Credit" 100.0 "15/10")
-                      (mock/request :post "/new" ) app :body json/read-str)]
+                      (mock/request :post "/new") app :body json/read-str)]
     (is (= result @ops))
     (is (= response {"operation" "Credit 100.00 at 15/10"}))))
 

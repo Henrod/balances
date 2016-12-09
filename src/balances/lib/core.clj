@@ -59,17 +59,17 @@
    valid months and valid days for the specific month.
   Returns ops updated."
   [ops {:keys [account description amount date]}]
-  {:pre [ops (u/validate-description description) (u/validate-account account)
-         (u/validate-date date) (u/validate-amount amount)]
+  {:pre [(u/validate-description description) (u/validate-account account)
+         (u/validate-date date) (u/validate-amount amount) (map? ops)]
    :post [(map? %)]}
   (let [date# (u/str->date date) amount# (bigdec amount)]
     (if (contains? ops account)
       (-> (update-in ops [account :current] #(+ % amount#))
           (update-in [account :operations date#]
-                     (comp vec conj) (build description amount)))
+                     (comp vec conj) (Operation. description amount#)))
       (assoc ops
         account
-        (Account. amount# (sorted-map date# [(build description amount#)]))))))
+        (Account. amount# (sorted-map date# [(Operation. description amount#)]))))))
 
 (defn current-balance
   "Current balance of an account.
@@ -79,7 +79,7 @@
   Returns a map from :balance to the string current balance
   Returns {:balance nil} if account does not exist."
   [ops account]
-  {:pre [ops (u/validate-account account)]
+  {:pre [(u/validate-account account) (map? ops)]
    :post [(map? %)]}
   {:balance (if (contains? ops account)
               (-> (ops account) :current u/to-format))})
@@ -94,7 +94,8 @@
    have :date, :balance and :operations.
   The vector is empty if account doesn't exist."
   [ops account start-date end-date]
-  {:pre [ops (u/validate-account account) (u/validate-date start-date end-date)]
+  {:pre [(u/validate-account account) (u/validate-date start-date end-date)
+         (map? ops)]
    :post [(map? %)]}
   {:statement
    (let [within?      (u/make-within start-date end-date)
@@ -118,22 +119,22 @@
   :principal and, if current-balance is non negative, :end.
   The vector is empty if account doesn't exist."
   [ops account]
-  {:pre [ops (u/validate-account account)]
+  {:pre [(u/validate-account account) (map? ops)]
    :post [(map? %)]}
   {:debts
    (let
      [operations (get-in ops [account :operations])
       every-2 (partition 2 1 (repeat nil) (compute-balances operations))
-      sel (fn [a [[curr-date curr-bal] [next-date _]]]
+      sel (fn [a [[curr-date curr-bal] [next-date  ]]]
             (let [l (last a)
-                  elm {:start     (u/date->str curr-date)
-                       :principal (u/to-format curr-bal)}
                   massoc #(if next-date (assoc % :end (u/previous-day next-date))
                                         (dissoc % :end))
                   plateau? (and (u/equal-decs curr-bal (:principal l))
                                 (= (:end l) (u/previous-day curr-date)))]
               (cond
                 plateau?        (conj (pop a) (massoc l))
-                (neg? curr-bal) (conj a (massoc elm))
+                (neg? curr-bal) (conj a (massoc
+                                          {:start     (u/date->str curr-date)
+                                           :principal (u/to-format curr-bal)}))
                 :else a)))]
      (reduce sel [] every-2))})

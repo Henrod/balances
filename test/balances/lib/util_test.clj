@@ -64,6 +64,9 @@
   (is (thrown? IllegalArgumentException (u/validate-amount 0.0)))
   (is (thrown? IllegalArgumentException (u/validate-amount 0M)))
   (is (thrown? IllegalArgumentException (u/validate-amount "0")))
+  (is (thrown? IllegalArgumentException (u/validate-amount ".")))
+  (is (thrown? IllegalArgumentException (u/validate-amount "-")))
+  (is (thrown? IllegalArgumentException (u/validate-amount "-.")))
 
   (is (u/validate-amount "10"))
   (is (u/validate-amount "10."))
